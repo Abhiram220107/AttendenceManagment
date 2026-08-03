@@ -1,0 +1,10 @@
+{
+  "studentId": "a278037c-11c4-4718-a950-b002932ced66",
+  "registrationNumber": "99240040480",
+  "name": "Abhiram",
+  "department": "CSE",
+  "email": "",
+  "password": "scrypt:32768:8:1$nuVKiINxmbb4e8pg$0bf2380cfb66fa64f7c46f9f50d6b3205f520d2926a0d14477578599274cbd2a04259d599e5bda5007e9b065d96caf17d8ab883e894e0d67ba5491a59d5c8177",
+  "qrToken": "qr_a0d08eaf1dc745019b9a25ffac10e56e",
+  "role": "student"
+}

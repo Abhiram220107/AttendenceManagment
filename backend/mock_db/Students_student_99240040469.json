@@ -1,0 +1,10 @@
+{
+  "studentId": "915adc85-88ad-47ea-bf5a-f635cc4cb80c",
+  "registrationNumber": "99240040469",
+  "name": "rani",
+  "department": "CSE",
+  "email": "",
+  "password": "scrypt:32768:8:1$rJAoV0GYegO4PbbH$4f6b366d60c6ca6ace7465afb02a94d8f66bd2ebd8648376662b9ffe41cf26773643a287aed0076cafcd8ce4fcb58c4d30dd6f846b610666bb351735e71170e0",
+  "qrToken": "qr_be371ddc96124f339048ee9e140b5a6c",
+  "role": "student"
+}
