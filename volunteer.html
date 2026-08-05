@@ -296,7 +296,9 @@
     var isSubmittingAtt = false;
 
     function setScanControlsDisabled(disabled) {
+      var liveBtn = document.getElementById("start-live-btn");
       var uploadBtn = document.getElementById("upload-scan-btn");
+      if (liveBtn) liveBtn.disabled = disabled;
       if (uploadBtn) uploadBtn.disabled = disabled;
     }
 
