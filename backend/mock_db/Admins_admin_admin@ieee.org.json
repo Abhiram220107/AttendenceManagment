@@ -1,7 +1,0 @@
-{
-  "adminId": "907fc7de-106d-4d24-bebe-21d19a538e96",
-  "email": "admin@ieee.org",
-  "name": "IEEE Admin",
-  "password": "scrypt:32768:8:1$ypvdeR5TkBWM2UIO$e8cc24eb649e5ad6818918298a338ac54b1cb5ea08bbc34d6506c6d78422dce1a9ad27381eda42f096871320b1b349762ab1d0f4c2056b954c3947b0f90980df",
-  "role": "admin"
-}

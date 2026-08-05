@@ -1,0 +1,215 @@
+<script>
+window.onerror = function(message, source, lineno, colno, error) {
+  alert("Client Script Error:\n" + message + "\nLine: " + lineno + "\nSource: " + source);
+  return false;
+};
+
+/**
+ * IEEE Event Attendance System - Frontend Core Controller
+ */
+
+// Global session key
+var SESSION_KEY = "ieee_gas_session";
+var activeStream = null;
+
+/**
+ * Get active session
+ */
+function getActiveSession() {
+  var session = sessionStorage.getItem(SESSION_KEY) || localStorage.getItem(SESSION_KEY);
+  if (session) {
+    try {
+      var data = JSON.parse(session);
+      // Auto-expire sessions older than 2 hours to prevent unauthorized persistent access
+      if (data.loginTime && (Date.now() - data.loginTime > 2 * 60 * 60 * 1000)) {
+        localStorage.removeItem(SESSION_KEY);
+        sessionStorage.removeItem(SESSION_KEY);
+        return null;
+      }
+      return data;
+    } catch(e) {
+      localStorage.removeItem(SESSION_KEY);
+      sessionStorage.removeItem(SESSION_KEY);
+    }
+  }
+  return null;
+}
+
+/**
+ * Save active session
+ */
+function saveActiveSession(userData) {
+  userData.loginTime = Date.now();
+  sessionStorage.setItem(SESSION_KEY, JSON.stringify(userData));
+  localStorage.setItem(SESSION_KEY, JSON.stringify(userData));
+}
+
+/**
+ * Clear session and redirect to login
+ */
+function clearSessionAndLogout() {
+  localStorage.removeItem(SESSION_KEY);
+  sessionStorage.removeItem(SESSION_KEY);
+  redirectToPage('index&logout=true');
+}
+
+/**
+ * Safe redirect in Google Apps Script sandbox (top-level redirect)
+ */
+function redirectToPage(pageName) {
+  if (typeof WEB_APP_URL !== 'undefined' && WEB_APP_URL) {
+    try {
+      window.top.location.href = WEB_APP_URL + "?page=" + pageName;
+    } catch(e) {
+      window.open(WEB_APP_URL + "?page=" + pageName, "_top");
+    }
+  } else {
+    // Local testing fallback
+    window.location.search = "?page=" + pageName;
+  }
+}
+
+/**
+ * Check page access control based on user role
+ */
+function enforceRoleSecurity(allowedRoles, currentPage) {
+  // Check if logout parameter is present, clear session and redirect to login screen
+  var urlParams = new URLSearchParams(window.location.search);
+  if (urlParams.get('logout') === 'true') {
+    localStorage.removeItem(SESSION_KEY);
+    redirectToPage('index');
+    return;
+  }
+
+  var session = getActiveSession();
+  
+  if (!session) {
+    if (currentPage !== 'index') {
+      redirectToPage('index');
+    }
+    return;
+  }
+  
+  if (currentPage === 'index') {
+    // If logged in, redirect to home
+    if (session.role === 'admin') redirectToPage('admin');
+    else if (session.role === 'volunteer') redirectToPage('volunteer');
+    else if (session.role === 'student') redirectToPage('student');
+    return;
+  }
+  
+  if (allowedRoles.indexOf(session.role) === -1) {
+    // Unauthorized
+    if (session.role === 'admin') redirectToPage('admin');
+    else if (session.role === 'volunteer') redirectToPage('volunteer');
+    else if (session.role === 'student') redirectToPage('student');
+  }
+}
+
+/**
+ * Start camera feed for capturing photos
+ */
+function startCaptureCamera(videoElementId, deviceId, callback) {
+  if (activeStream) {
+    stopCaptureCamera();
+  }
+  
+  var constraints = deviceId ? { video: { deviceId: { exact: deviceId } } } : { video: { facingMode: "user" } };
+  
+  navigator.mediaDevices.getUserMedia(constraints)
+    .then(function(stream) {
+      var video = document.getElementById(videoElementId);
+      if (video) {
+        video.srcObject = stream;
+        activeStream = stream;
+        if (callback) callback(null, stream);
+      }
+    })
+    .catch(function(err) {
+      console.error("Camera open error: ", err);
+      if (callback) callback(err);
+    });
+}
+
+/**
+ * Close active camera streams
+ */
+function stopCaptureCamera() {
+  if (activeStream) {
+    activeStream.getTracks().forEach(function(track) {
+      track.stop();
+    });
+    activeStream = null;
+  }
+}
+
+/**
+ * Capture frame from live video feed
+ */
+function captureFrameFromFeed(videoElementId) {
+  var video = document.getElementById(videoElementId);
+  if (!video) return null;
+  
+  var canvas = document.createElement('canvas');
+  canvas.width = video.videoWidth || 640;
+  canvas.height = video.videoHeight || 480;
+  
+  var ctx = canvas.getContext('2d');
+  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+  
+  var base64 = canvas.toDataURL('image/jpeg', 0.85);
+  stopCaptureCamera();
+  return base64;
+}
+
+/**
+ * UI Toast alerts
+ */
+function showStatusToast(message, type) {
+  var alertClass = type === 'success' ? 'bg-success text-white' : 'bg-danger text-white';
+  var container = document.getElementById('toast-container');
+  if (!container) {
+    container = document.createElement('div');
+    container.id = 'toast-container';
+    container.className = 'position-fixed bottom-0 end-0 p-3';
+    container.style.zIndex = '1100';
+    document.body.appendChild(container);
+  }
+  
+  var toastId = 'toast_' + Date.now();
+  var html = `
+    <div id="${toastId}" class="toast align-items-center ${alertClass} border-0 show" role="alert" aria-live="assertive" aria-atomic="true">
+      <div class="d-flex">
+        <div class="toast-body font-bold text-sm">
+          ${message}
+        </div>
+        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close" onclick="document.getElementById('${toastId}').remove()"></button>
+      </div>
+    </div>
+  `;
+  container.insertAdjacentHTML('beforeend', html);
+  
+  setTimeout(function() {
+    var el = document.getElementById(toastId);
+    if (el) el.remove();
+  }, 4000);
+}
+
+/**
+ * Utility to convert standard Google Drive file viewer URLs into direct CDN rendering links
+ */
+function formatDriveDirectLink(url) {
+  if (!url) return "";
+  if (url.indexOf("drive.google.com") !== -1) {
+    var match = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
+    if (match && match[1]) {
+      return "https://lh3.googleusercontent.com/d/" + match[1];
+    }
+    var queryMatch = url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+    if (queryMatch && queryMatch[1]) {
+      return "https://lh3.googleusercontent.com/d/" + queryMatch[1];
+    }
+  }
+  return url;
+}
+</script>

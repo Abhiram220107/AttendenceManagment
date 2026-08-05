@@ -1,0 +1,161 @@
+/* IEEE Event Attendance System - Stylesheet */
+
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
+
+:root {
+  --ieee-blue: #00629B;
+  --ieee-dark: #004B87;
+  --ieee-gold: #FFC72C;
+  --bg-slate: #f8fafc;
+  --border-slate: #e2e8f0;
+}
+
+body {
+  font-family: 'Outfit', sans-serif;
+  background-color: var(--bg-slate);
+  color: #1e293b;
+  min-height: 100vh;
+}
+
+/* Custom transitions and elevations */
+.card-premium {
+  border: 1px solid var(--border-slate);
+  border-radius: 12px;
+  background: #ffffff;
+  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.02);
+  transition: all 0.25s ease-in-out;
+}
+
+.card-premium:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 15px -3px rgba(0,0,0,0.08), 0 4px 6px -2px rgba(0,0,0,0.04);
+}
+
+/* Collapsible sidebar layouts */
+.sidebar-slate {
+  background-color: #0f172a;
+  color: #f8fafc;
+  min-width: 260px;
+  max-width: 260px;
+  min-height: 100vh;
+  transition: all 0.3s;
+}
+
+.sidebar-brand {
+  border-bottom: 1px solid #1e293b;
+  height: 64px;
+}
+
+.sidebar-item {
+  color: #cbd5e1;
+  padding: 12px 18px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+  font-weight: 500;
+  border-radius: 8px;
+  transition: all 0.2s;
+  margin: 2px 8px;
+}
+
+.sidebar-item:hover, .sidebar-item.active {
+  background-color: var(--ieee-blue);
+  color: #ffffff;
+  box-shadow: 0 4px 6px -1px rgba(0, 98, 155, 0.25);
+}
+
+/* Camera and capture layout aspect-ratios */
+.camera-viewport {
+  aspect-ratio: 3/4;
+  background-color: #020617;
+  border: 1px solid #334155;
+  border-radius: 10px;
+  overflow: hidden;
+  position: relative;
+}
+
+.camera-feed {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Stat icons bg */
+.stat-icon {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Verification zoom cards */
+.verification-zoom {
+  cursor: zoom-in;
+  transition: transform 0.3s;
+}
+.verification-zoom:hover {
+  transform: scale(1.03);
+}
+
+/* Status badges */
+.badge-status {
+  padding: 5px 10px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  border-radius: 6px;
+}
+
+.status-verified {
+  background-color: #ecfdf5;
+  color: #065f46;
+  border: 1px solid #a7f3d0;
+}
+
+.status-pending {
+  background-color: #fffbeb;
+  color: #92400e;
+  border: 1px solid #fde68a;
+}
+
+.status-rejected {
+  background-color: #fef2f2;
+  color: #991b1b;
+  border: 1px solid #fca5a5;
+}
+
+.status-absent {
+  background-color: #f1f5f9;
+  color: #64748b;
+  border: 1px solid #cbd5e1;
+}
+
+/* Mobile responsive drawer toggles */
+@media (max-width: 991.98px) {
+  .sidebar-slate {
+    position: fixed;
+    z-index: 1050;
+    left: -260px;
+  }
+  .sidebar-slate.open {
+    left: 0;
+  }
+}

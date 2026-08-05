@@ -1,0 +1,12 @@
+{
+  "version": 2,
+  "public": true,
+  "cleanUrls": true,
+  "rewrites": [
+    { "source": "/", "destination": "/frontend/index.html" },
+    { "source": "/admin", "destination": "/frontend/admin.html" },
+    { "source": "/volunteer", "destination": "/frontend/volunteer.html" },
+    { "source": "/student", "destination": "/frontend/student.html" },
+    { "source": "/(.*)", "destination": "/frontend/$1" }
+  ]
+}
