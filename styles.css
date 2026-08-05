@@ -15,6 +15,8 @@ body {
   background-color: var(--bg-slate);
   color: #1e293b;
   min-height: 100vh;
+  margin: 0;
+  padding: 0;
 }
 
 /* Custom transitions and elevations */
@@ -148,7 +150,27 @@ body {
   border: 1px solid #cbd5e1;
 }
 
-/* Mobile responsive drawer toggles */
+/* Mobile responsive drawer toggles & camera viewport */
+#qr-reader-container {
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+#qr-reader {
+  width: 100% !important;
+  max-width: 100% !important;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+#qr-reader video {
+  width: 100% !important;
+  height: auto !important;
+  object-fit: cover !important;
+  border-radius: 12px;
+}
+
 @media (max-width: 991.98px) {
   .sidebar-slate {
     position: fixed;
@@ -157,5 +179,22 @@ body {
   }
   .sidebar-slate.open {
     left: 0;
+  }
+}
+
+@media (max-width: 576px) {
+  body {
+    font-size: 0.9rem;
+  }
+  .card {
+    padding: 1rem !important;
+    border-radius: 10px !important;
+  }
+  header {
+    padding-left: 0.75rem !important;
+    padding-right: 0.75rem !important;
+  }
+  .btn {
+    padding: 0.65rem 1rem !important;
   }
 }
