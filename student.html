@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>IEEE Event Attendance System - Student Dashboard</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+  
+  <!-- CDN for QRCode.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  
+  <!-- Common CSS Styles -->
+  <link rel="stylesheet" href="styles.css">
+  <?!= include('styles'); ?>
+</head>
+<body class="bg-light">
+
+  <div class="min-h-screen d-flex flex-column justify-content-between">
+    
+    <!-- Header Navbar -->
+    <header class="bg-white border-bottom shadow-sm h-16 flex items-center justify-between px-6 d-flex align-items-center px-4" style="height: 64px;">
+      <div class="d-flex align-items-center gap-2">
+        <div class="rounded bg-primary text-white d-flex align-items-center justify-content-center" style="width: 32px; height: 32px; background-color: var(--ieee-blue) !important;">
+          <span class="fs-6 font-bold tracking-wider">IEEE</span>
+        </div>
+        <span class="fs-5 font-bold tracking-wider text-gray-800">Student Portal</span>
+      </div>
+
+      <div class="ms-auto d-flex align-items-center gap-3">
+        <button onclick="openChangePasswordModal()" class="btn btn-outline-secondary btn-sm py-1.5 px-3">
+          Change Password
+        </button>
+        <button onclick="clearSessionAndLogout()" class="btn btn-outline-danger btn-sm py-1.5 px-3">
+          <i class="bi bi-box-arrow-right"></i> Logout
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Dashboard Workspace -->
+    <main class="flex-grow-1 p-4 max-w-4xl w-100 mx-auto space-y-4" style="max-width: 992px;">
+      
+      <div id="student-error-alert" class="alert alert-danger d-none" role="alert"></div>
+
+      <!-- Spinner Loader -->
+      <div id="student-loader" class="text-center py-5">
+        <div class="spinner-border text-primary fs-3" role="status"></div>
+        <p class="text-muted small mt-2">Loading profile database...</p>
+      </div>
+
+      <!-- Student details interface -->
+      <div id="student-content" class="d-none space-y-4">
+        
+        <!-- Welcome snapshot card -->
+        <div class="card border border-slate-200 bg-white p-4 shadow-sm mb-4">
+          <div class="row align-items-center g-4">
+            <div class="col-md-8">
+              <h2 class="fw-bold text-gray-900 mb-1">Welcome back, <span id="st-welcome-name">-</span>!</h2>
+              <p class="text-muted small mb-0 font-semibold">Reg No: <span id="st-welcome-reg" class="fw-bold text-slate-800">-</span></p>
+              <p class="text-muted small mb-0 font-semibold">Department: <span id="st-welcome-dept" class="fw-semibold text-slate-800">-</span></p>
+            </div>
+            <div class="col-md-4 text-md-end">
+              <button onclick="openQRModal()" class="btn btn-primary btn-lg py-3 px-4 w-100 font-bold shadow-lg" style="background-color: var(--ieee-blue); border-color: var(--ieee-blue);">
+                <i class="bi bi-qr-code"></i> Show My QR Code
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Checklist matrix list -->
+        <div class="space-y-4">
+          <h3 class="fs-5 font-bold mb-3 text-gray-800">Your Registered Events & Check-in Status</h3>
+          <div id="student-checklist-container" class="space-y-4">
+            <!-- Programmatically rendered -->
+          </div>
+        </div>
+
+      </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white border-top py-3 text-center text-muted small mt-5">
+      &copy; 2026 IEEE Attendance Management System. All rights reserved.
+    </footer>
+
+  </div>
+
+  <!-- ====================================================
+      MODALS DIALOGS
+      ==================================================== -->
+
+  <!-- Modal: View QR Code -->
+  <div id="qr-modal" class="modal fade" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title font-bold">Your Identity QR Code</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body text-center">
+          <h4 id="qr-name" class="fw-bold mb-1">-</h4>
+          <p id="qr-reg" class="text-muted small">-</p>
+          
+          <!-- QR Canvas element -->
+          <div id="qr-canvas-holder" class="my-4 d-inline-block p-3 border border-dark rounded bg-white shadow-sm"></div>
+          
+          <p class="text-muted small px-3">Present this QR code to the volunteer scanner to record your daily attendance.</p>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-light w-100" data-bs-dismiss="modal">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Change Password -->
+  <div id="pass-modal" class="modal fade" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content p-2">
+        <div class="modal-header">
+          <h5 class="modal-title font-bold">Change Password</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <form id="pass-form" onsubmit="submitPasswordChange(event)">
+          <div class="modal-body space-y-3">
+            <div id="pass-error-alert" class="alert alert-danger d-none d-flex align-items-center gap-2" role="alert">
+              <i class="bi bi-exclamation-triangle-fill"></i>
+              <div id="pass-error-msg">Error</div>
+            </div>
+            <div id="pass-success-alert" class="alert alert-success d-none d-flex align-items-center gap-2" role="alert">
+              <i class="bi bi-check-circle-fill"></i>
+              <div id="pass-success-msg">Success</div>
+            </div>
+            <div class="mb-3">
+              <label for="old-pass" class="form-label font-bold text-sm">Current Password</label>
+              <input type="password" id="old-pass" class="form-control" placeholder="Enter current password" required>
+            </div>
+            <div class="mb-3">
+              <label for="new-pass" class="form-label font-bold text-sm">New Password</label>
+              <input type="password" id="new-pass" class="form-control" placeholder="Minimum 6 characters" required>
+            </div>
+            <div class="mb-3">
+              <label for="confirm-pass" class="form-label font-bold text-sm">Confirm New Password</label>
+              <input type="password" id="confirm-pass" class="form-control" placeholder="Retype new password" required>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" id="pass-submit-btn" class="btn btn-primary">Update Password</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  
+  <!-- Pass GAS Web App URL to Frontend JS -->
+  <script>
+    var WEB_APP_URL = "<?!= ScriptApp.getService().getUrl(); ?>";
+  </script>
+
+  <!-- Common JavaScript Controller -->
+  <script src="script.js"></script>
+  <?!= include('script'); ?>
+
+  <script>
+    var studentProfile = null;
+    var qrModalInstance = null;
+    var passModalInstance = null;
+
+    document.addEventListener("DOMContentLoaded", function() {
+      // 1. Enforce student security lock
+      enforceRoleSecurity(['student'], 'student');
+      
+      // Initialize modals
+      qrModalInstance = new bootstrap.Modal(document.getElementById('qr-modal'));
+      passModalInstance = new bootstrap.Modal(document.getElementById('pass-modal'));
+
+      // Fetch profile data
+      loadStudentProfileData();
+    });
+
+    function loadStudentProfileData() {
+      var session = getActiveSession();
+      if (!session) return;
+      
+      execApi(
+        'getStudentProfile',
+        { userId: session.userId },
+        function(response) {
+          document.getElementById("student-loader").classList.add("d-none");
+          
+          if (response.success) {
+            studentProfile = response.profile;
+            
+            // Populate Welcome
+            document.getElementById("st-welcome-name").innerText = studentProfile.name;
+            document.getElementById("st-welcome-reg").innerText = studentProfile.registrationNumber;
+            document.getElementById("st-welcome-dept").innerText = studentProfile.department;
+            
+            // Populate Modal Headers
+            document.getElementById("qr-name").innerText = studentProfile.name;
+            document.getElementById("qr-reg").innerText = "Reg No: " + studentProfile.registrationNumber;
+            
+            renderChecklistContainer();
+            document.getElementById("student-content").classList.remove("d-none");
+          } else {
+            var errDiv = document.getElementById("student-error-alert");
+            errDiv.innerHTML = (response.message || "Failed to load student checklist profile.") + 
+                               ' <br><a href="javascript:void(0)" onclick="clearSessionAndLogout()" class="alert-link font-bold">Click here to logout and return to login</a>.';
+            errDiv.classList.remove("d-none");
+          }
+        },
+        function(err) {
+          document.getElementById("student-loader").classList.add("d-none");
+          var errDiv = document.getElementById("student-error-alert");
+          errDiv.innerHTML = "Server connection lost: " + err.message + 
+                             ' <br><a href="javascript:void(0)" onclick="clearSessionAndLogout()" class="alert-link font-bold">Click here to logout and return to login</a>.';
+          errDiv.classList.remove("d-none");
+        }
+      );
+    }
+
+    function renderChecklistContainer() {
+      var container = document.getElementById("student-checklist-container");
+      container.innerHTML = "";
+      
+      if (!studentProfile.attendanceChecklist || studentProfile.attendanceChecklist.length === 0) {
+        container.innerHTML = `<div class="card border border-slate-200 bg-white p-5 text-center text-muted">You are not registered in any active events.</div>`;
+        return;
+      }
+      
+      studentProfile.attendanceChecklist.forEach(function(eventCheck) {
+        var cardHtml = `
+          <div class="card border border-slate-200 bg-white shadow-xs overflow-hidden mb-4">
+            <div class="card-header bg-light border-bottom px-4 py-3">
+              <h4 class="font-bold mb-0 text-gray-800 fs-6">${eventCheck.eventName}</h4>
+            </div>
+            <div class="card-body p-4">
+              <div class="row row-cols-1 row-cols-md-3 g-3">
+        `;
+        
+        Object.entries(eventCheck.attendance).forEach(function([sessionName, attDetails]) {
+          var status = attDetails.status;
+          var remarks = attDetails.remarks || "";
+          
+          var badgeClass = "status-absent";
+          var statusLabel = "❌ Absent";
+          
+          if (status === "Verified") {
+            badgeClass = "status-verified";
+            statusLabel = "✅ Present";
+          } else if (status === "Pending Verification" || status === "Pending") {
+            badgeClass = "status-pending";
+            statusLabel = "⏳ Pending";
+          } else if (status === "Rejected") {
+            badgeClass = "status-rejected";
+            statusLabel = "❌ Absent";
+          } else if (status === "Locked") {
+            badgeClass = "status-absent";
+            statusLabel = "🔒 Locked";
+          } else if (status === "Not Started") {
+            badgeClass = "status-pending";
+            statusLabel = "⏳ Not Started";
+          }
+
+          cardHtml += `
+            <div class="col">
+              <div class="card border border-slate-150 p-3 bg-light d-flex flex-column justify-content-between h-100 gap-2">
+                <div class="d-flex align-items-center justify-content-between">
+                  <span class="small font-bold text-slate-500">${sessionName}</span>
+                  <span class="badge-status ${badgeClass}">${statusLabel}</span>
+                </div>
+          `;
+          
+          // Display admin remarks if rejected
+          if (status === "Rejected") {
+            cardHtml += `
+              <div class="mt-2 small text-danger bg-danger bg-opacity-10 border border-danger border-opacity-20 p-2 rounded d-flex gap-1.5 align-items-start leading-relaxed">
+                <i class="bi bi-file-earmark-excel-fill text-danger shrink-0 mt-0.5" style="font-size: 0.85rem;"></i>
+                <div style="font-size: 0.72rem;"><b>Auditor remarks:</b> ${remarks || 'Decline. Contact coordinator.'}</div>
+              </div>
+            `;
+          }
+          
+          cardHtml += `
+              </div>
+            </div>
+          `;
+        });
+        
+        cardHtml += `
+              </div>
+            </div>
+          </div>
+        `;
+        container.insertAdjacentHTML('beforeend', cardHtml);
+      });
+    }
+
+    function openQRModal() {
+      if (!studentProfile) return;
+      var holder = document.getElementById("qr-canvas-holder");
+      holder.innerHTML = "";
+      
+      if (studentProfile.qrCodeURL) {
+        holder.innerHTML = `<img src="${formatDriveDirectLink(studentProfile.qrCodeURL)}" style="width: 180px; height: 180px; object-fit: contain;" />`;
+      } else {
+        // Fallback local draw
+        new QRCode(holder, {
+          text: studentProfile.qrToken,
+          width: 180,
+          height: 180,
+          correctLevel: QRCode.CorrectLevel.H
+        });
+      }
+      
+      qrModalInstance.show();
+    }
+
+    /* Password Reset */
+    function openChangePasswordModal() {
+      document.getElementById("pass-form").reset();
+      document.getElementById("pass-error-alert").classList.add("d-none");
+      document.getElementById("pass-success-alert").classList.add("d-none");
+      passModalInstance.show();
+    }
+
+    function submitPasswordChange(e) {
+      e.preventDefault();
+      
+      var oldP = document.getElementById("old-pass").value.trim();
+      var newP = document.getElementById("new-pass").value.trim();
+      var confP = document.getElementById("confirm-pass").value.trim();
+      
+      var errorDiv = document.getElementById("pass-error-alert");
+      var errorMsg = document.getElementById("pass-error-msg");
+      var successDiv = document.getElementById("pass-success-alert");
+      var successMsg = document.getElementById("pass-success-msg");
+      
+      var submitBtn = document.getElementById("pass-submit-btn");
+
+      errorDiv.classList.add("d-none");
+      successDiv.classList.add("d-none");
+
+      if (newP !== confP) {
+        errorMsg.innerText = "New passwords do not match.";
+        errorDiv.classList.remove("d-none");
+        return;
+      }
+
+      if (newP.length < 6) {
+        errorMsg.innerText = "Password must be at least 6 characters.";
+        errorDiv.classList.remove("d-none");
+        return;
+      }
+
+      submitBtn.disabled = true;
+      submitBtn.innerText = "Updating...";
+
+      var session = getActiveSession();
+      if (!session) return;
+
+      execApi(
+        'updatePassword',
+        { userId: session.userId, oldP: oldP, newP: newP, role: session.role },
+        function(response) {
+          submitBtn.disabled = false;
+          submitBtn.innerText = "Update Password";
+          
+          if (response.success) {
+            successMsg.innerText = response.message;
+            successDiv.classList.remove("d-none");
+            document.getElementById("pass-form").reset();
+          } else {
+            errorMsg.innerText = response.message;
+            errorDiv.classList.remove("d-none");
+          }
+        },
+        function(err) {
+          submitBtn.disabled = false;
+          submitBtn.innerText = "Update Password";
+          errorMsg.innerText = "Server error: " + err.message;
+          errorDiv.classList.remove("d-none");
+        }
+      );
+    }
+  </script>
+</body>
+</html>

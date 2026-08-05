@@ -1,0 +1,11 @@
+{
+  "version": 2,
+  "public": true,
+  "cleanUrls": true,
+  "rewrites": [
+    { "source": "/", "destination": "/index.html" },
+    { "source": "/admin", "destination": "/admin.html" },
+    { "source": "/volunteer", "destination": "/volunteer.html" },
+    { "source": "/student", "destination": "/student.html" }
+  ]
+}
