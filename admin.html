@@ -844,19 +844,21 @@
       var tbody = document.getElementById("events-table-body");
       tbody.innerHTML = `<tr><td colspan="4" class="text-center py-4"><span class="spinner-border spinner-border-sm text-primary"></span> Loading events...</td></tr>`;
       
-      google.script.run
-        .withSuccessHandler(function(response) {
+      execApi(
+        'getAdminEvents',
+        {},
+        function(response) {
           if (response.success) {
             globalEvents = response.events;
             renderEventsTable();
           } else {
             showStatusToast("Failed to load events: " + response.message, "danger");
           }
-        })
-        .withFailureHandler(function(err) {
+        },
+        function(err) {
           showStatusToast("Server error: " + err.message, "danger");
-        })
-        .getVolunteerEventsList();
+        }
+      );
     }
 
     function renderEventsTable() {
@@ -904,8 +906,10 @@
       if (!currentManageEventId) return;
       var listDiv = document.getElementById("sessions-modal-list");
       
-      google.script.run
-        .withSuccessHandler(function(response) {
+      execApi(
+        'getEventSessions',
+        { eventId: currentManageEventId },
+        function(response) {
           if (response.success) {
             var html = "";
             if (response.sessions.length === 0) {
@@ -941,11 +945,11 @@
           } else {
             listDiv.innerHTML = `<div class="alert alert-danger font-bold text-sm">${response.message}</div>`;
           }
-        })
-        .withFailureHandler(function(err) {
+        },
+        function(err) {
           listDiv.innerHTML = `<div class="alert alert-danger font-bold text-sm">Error: ${err.message}</div>`;
-        })
-        .getEventSessions(currentManageEventId);
+        }
+      );
     }
 
     function updateSessionState(sessionName, newState) {
@@ -954,39 +958,43 @@
       var listDiv = document.getElementById("sessions-modal-list");
       listDiv.style.opacity = "0.5";
       
-      google.script.run
-        .withSuccessHandler(function(response) {
+      execApi(
+        'setSessionStatus',
+        { eventId: currentManageEventId, sessionName: sessionName, newStatus: newState },
+        function(response) {
           listDiv.style.opacity = "1";
           if (response.success) {
             showStatusToast(response.message, "success");
             loadManageSessionsList();
           } else {
             showStatusToast(response.message, "danger");
-            loadManageSessionsList(); // reload to clear opacity
+            loadManageSessionsList();
           }
-        })
-        .withFailureHandler(function(err) {
+        },
+        function(err) {
           listDiv.style.opacity = "1";
           showStatusToast("Server error: " + err.message, "danger");
-        })
-        .setSessionStatus(currentManageEventId, sessionName, newState);
+        }
+      );
     }
 
     function confirmDeleteEvent(eventId, eventName) {
       if (confirm("Are you sure you want to delete event '" + eventName + "'? This will also delete all associated attendance records!")) {
-        google.script.run
-          .withSuccessHandler(function(response) {
+        execApi(
+          'deleteEvent',
+          { eventId: eventId },
+          function(response) {
             if (response.success) {
               showStatusToast(response.message, "success");
               fetchEventsList();
             } else {
               showStatusToast(response.message, "danger");
             }
-          })
-          .withFailureHandler(function(err) {
+          },
+          function(err) {
             showStatusToast("Server error: " + err.message, "danger");
-          })
-          .deleteEvent(eventId);
+          }
+        );
       }
     }
 
@@ -1005,8 +1013,10 @@
       submitBtn.disabled = true;
       submitBtn.innerText = "Creating...";
 
-      google.script.run
-        .withSuccessHandler(function(response) {
+      execApi(
+        'createEvent',
+        { eventName: name, eventDate: date, sessions: sessions },
+        function(response) {
           submitBtn.disabled = false;
           submitBtn.innerText = "Create Event";
           if (response.success) {
@@ -1016,13 +1026,13 @@
           } else {
             showStatusToast(response.message, "danger");
           }
-        })
-        .withFailureHandler(function(err) {
+        },
+        function(err) {
           submitBtn.disabled = false;
           submitBtn.innerText = "Create Event";
           showStatusToast("Failed: " + err.message, "danger");
-        })
-        .createEvent(name, date, sessions);
+        }
+      );
     }
 
     /* 2. UPLOAD PARTICIPANTS (EXCEL) */
@@ -1111,8 +1121,10 @@
       importBtn.disabled = true;
       feedback.innerHTML = `<span class="spinner-border spinner-border-sm text-primary"></span> Importing records into Sheets database...`;
       
-      google.script.run
-        .withSuccessHandler(function(response) {
+      execApi(
+        'importParticipants',
+        { rows: excelParsedRows },
+        function(response) {
           if (response.success) {
             feedback.innerHTML = `<div class="alert alert-success font-bold text-sm mb-0"><i class="bi bi-check-circle-fill"></i> ${response.message}</div>`;
             document.getElementById("excel-file-input").value = "";
@@ -1122,12 +1134,12 @@
             importBtn.disabled = false;
             feedback.innerHTML = `<div class="alert alert-danger font-bold text-sm">${response.message}</div>`;
           }
-        })
-        .withFailureHandler(function(err) {
+        },
+        function(err) {
           importBtn.disabled = false;
           feedback.innerHTML = `<div class="alert alert-danger font-bold text-sm">Server connection lost: ${err.message}</div>`;
-        })
-        .importParticipantsFromExcelArray(excelParsedRows);
+        }
+      );
     }
 
     /* 3. STUDENTS LIST */
@@ -1135,19 +1147,21 @@
       var tbody = document.getElementById("students-table-body");
       tbody.innerHTML = `<tr><td colspan="5" class="text-center py-4"><span class="spinner-border spinner-border-sm text-primary"></span> Querying students...</td></tr>`;
       
-      google.script.run
-        .withSuccessHandler(function(response) {
+      execApi(
+        'getStudentsList',
+        {},
+        function(response) {
           if (response.success) {
             globalStudents = response.students;
             renderStudentsTable();
           } else {
             showStatusToast("Failed to load students: " + response.message, "danger");
           }
-        })
-        .withFailureHandler(function(err) {
+        },
+        function(err) {
           showStatusToast("Server error: " + err.message, "danger");
-        })
-        .getAdminStudentsList();
+        }
+      );
     }
 
     function renderStudentsTable() {
@@ -1196,19 +1210,21 @@
 
     function confirmDeleteStudent(studentId, studentName) {
       if (confirm("Are you sure you want to delete student '" + studentName + "'? This will also delete all of their associated attendance records!")) {
-        google.script.run
-          .withSuccessHandler(function(response) {
+        execApi(
+          'deleteStudent',
+          { studentId: studentId },
+          function(response) {
             if (response.success) {
               showStatusToast(response.message, "success");
               fetchStudentsList();
             } else {
               showStatusToast(response.message, "danger");
             }
-          })
-          .withFailureHandler(function(err) {
+          },
+          function(err) {
             showStatusToast("Server error: " + err.message, "danger");
-          })
-          .deleteStudent(studentId);
+          }
+        );
       }
     }
 
@@ -1298,19 +1314,21 @@
       var tbody = document.getElementById("volunteers-table-body");
       tbody.innerHTML = `<tr><td colspan="3" class="text-center py-4"><span class="spinner-border spinner-border-sm text-primary"></span> Querying volunteers...</td></tr>`;
       
-      google.script.run
-        .withSuccessHandler(function(response) {
+      execApi(
+        'getVolunteersList',
+        {},
+        function(response) {
           if (response.success) {
             globalVolunteers = response.volunteers;
             renderVolunteersTable();
           } else {
             showStatusToast("Failed to load volunteers: " + response.message, "danger");
           }
-        })
-        .withFailureHandler(function(err) {
+        },
+        function(err) {
           showStatusToast("Server error: " + err.message, "danger");
-        })
-        .getAdminVolunteersList();
+        }
+      );
     }
 
     function renderVolunteersTable() {
@@ -1348,8 +1366,10 @@
       submitBtn.disabled = true;
       submitBtn.innerText = "Registering...";
 
-      google.script.run
-        .withSuccessHandler(function(response) {
+      execApi(
+        'createVolunteer',
+        { name: name, username: email, password: password },
+        function(response) {
           submitBtn.disabled = false;
           submitBtn.innerText = "Register Volunteer";
           if (response.success) {
@@ -1359,13 +1379,13 @@
           } else {
             showStatusToast(response.message, "danger");
           }
-        })
-        .withFailureHandler(function(err) {
+        },
+        function(err) {
           submitBtn.disabled = false;
           submitBtn.innerText = "Register Volunteer";
           showStatusToast("Failed: " + err.message, "danger");
-        })
-        .createVolunteerAccount(name, email, password);
+        }
+      );
     }
 
     /* 5. ATTENDANCE MANUAL VERIFICATION */
@@ -1377,19 +1397,21 @@
       document.getElementById("verification-workspace-empty").classList.remove("d-none");
       globalSelectedRecord = null;
 
-      google.script.run
-        .withSuccessHandler(function(response) {
+      execApi(
+        'getPendingVerifications',
+        {},
+        function(response) {
           if (response.success) {
             globalPendingRecords = response.records;
             renderVerificationQueue();
           } else {
             showStatusToast("Failed queue sync: " + response.message, "danger");
           }
-        })
-        .withFailureHandler(function(err) {
+        },
+        function(err) {
           showStatusToast("Connection lost: " + err.message, "danger");
-        })
-        .getPendingVerifications();
+        }
+      );
     }
 
     function renderVerificationQueue() {
@@ -1452,8 +1474,10 @@
       var workDiv = document.getElementById("verification-workspace");
       workDiv.style.opacity = "0.5";
       
-      google.script.run
-        .withSuccessHandler(function(response) {
+      execApi(
+        'processVerification',
+        { attId: globalSelectedRecord.attendanceId, decision: status, rejectionReason: remarksVal },
+        function(response) {
           workDiv.style.opacity = "1";
           if (response.success) {
             showStatusToast("Record successfully " + status, "success");
@@ -1461,18 +1485,20 @@
           } else {
             showStatusToast("Failed: " + response.message, "danger");
           }
-        })
-        .withFailureHandler(function(err) {
+        },
+        function(err) {
           workDiv.style.opacity = "1";
           showStatusToast("Connection lost: " + err.message, "danger");
-        })
-        .verifyAttendanceRecord(globalSelectedRecord.attendanceId, status, remarksVal);
+        }
+      );
     }
 
     /* 6. REPORTS & EXCEL MATRIX */
     function loadEventsDropdowns() {
-      google.script.run
-        .withSuccessHandler(function(response) {
+      execApi(
+        'getAdminEvents',
+        {},
+        function(response) {
           if (response.success) {
             globalEvents = response.events;
             var dselect = document.getElementById("dash-event-select");
@@ -1486,16 +1512,18 @@
               loadDashboardStats();
             }
           }
-        })
-        .getVolunteerEventsList();
+        }
+      );
     }
 
     function loadDashboardStats() {
       var eventId = document.getElementById("dash-event-select").value;
       if (!eventId) return;
       
-      google.script.run
-        .withSuccessHandler(function(response) {
+      execApi(
+        'getReportStats',
+        { eventId: eventId },
+        function(response) {
           if (response.success) {
             var stats = response.stats;
             document.getElementById("stat-total").innerText = stats.totalParticipants;
@@ -1535,8 +1563,8 @@
               `;
             }
           }
-        })
-        .getReportStats(eventId);
+        }
+      );
     }
 
     function loadReportsDropdowns() {
@@ -1559,20 +1587,24 @@
       var tbody = document.getElementById("reports-table-body");
       tbody.innerHTML = `<tr><td colspan="6" class="text-center py-4"><span class="spinner-border spinner-border-sm text-primary"></span> Joining records...</td></tr>`;
 
-      google.script.run
-        .withSuccessHandler(function(response) {
+      execApi(
+        'getReportsMatrix',
+        { eventId: eventId },
+        function(response) {
           if (response.success) {
             globalReportsAttendance = response.records;
             
-            // Query students
-            google.script.run
-              .withSuccessHandler(function(stResponse) {
+            execApi(
+              'getStudentsList',
+              {},
+              function(stResponse) {
                 if (stResponse.success) {
                   globalStudents = stResponse.students;
                   
-                  // Compute reports stats locally for selected event
-                  google.script.run
-                    .withSuccessHandler(function(statsResponse) {
+                  execApi(
+                    'getReportStats',
+                    { eventId: eventId },
+                    function(statsResponse) {
                       if (statsResponse.success) {
                         var stats = statsResponse.stats;
                         document.getElementById("rep-total").innerText = stats.totalParticipants;
@@ -1582,14 +1614,14 @@
                         
                         renderReportsMatrix();
                       }
-                    })
-                    .getReportStats(eventId);
+                    }
+                  );
                 }
-              })
-              .getAdminStudentsList();
+              }
+            );
           }
-        })
-        .getAdminAttendanceRecords(eventId);
+        }
+      );
     }
 
     function renderReportsMatrix() {
@@ -1713,8 +1745,10 @@
       var session = getActiveSession();
       if (!session) return;
 
-      google.script.run
-        .withSuccessHandler(function(response) {
+      execApi(
+        'updatePassword',
+        { userId: session.userId, oldP: oldP, newP: newP, role: session.role },
+        function(response) {
           submitBtn.disabled = false;
           submitBtn.innerText = "Update Password";
           
@@ -1724,13 +1758,13 @@
           } else {
             showStatusToast(response.message, "danger");
           }
-        })
-        .withFailureHandler(function(err) {
+        },
+        function(err) {
           submitBtn.disabled = false;
           submitBtn.innerText = "Update Password";
           showStatusToast("Failed: " + err.message, "danger");
-        })
-        .updateSessionPassword(session.userId, oldP, newP, session.role);
+        }
+      );
     });
 
   </script>
