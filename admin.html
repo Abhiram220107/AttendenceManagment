@@ -47,6 +47,9 @@
         <a href="#" onclick="switchPanel('verification')" id="nav-verification" class="sidebar-item">
           <i class="bi bi-clipboard-check"></i> Verification
         </a>
+        <a href="#" onclick="switchPanel('emergency')" id="nav-emergency" class="sidebar-item">
+          <i class="bi bi-exclamation-triangle-fill"></i> Emergency Attendance
+        </a>
         <a href="#" onclick="switchPanel('reports')" id="nav-reports" class="sidebar-item">
           <i class="bi bi-graph-up-arrow"></i> Reports
         </a>
@@ -623,6 +626,150 @@
           </div>
         </section>
 
+        <!-- ====================================================
+            PANEL: EMERGENCY MANUAL ATTENDANCE
+            ==================================================== -->
+        <section id="panel-emergency" class="admin-panel d-none">
+          <div class="d-flex align-items-center justify-content-between mb-4">
+            <div>
+              <h2 class="fw-bold text-gray-900 mb-0"><i class="bi bi-exclamation-triangle-fill text-warning me-2"></i>Emergency Manual Attendance</h2>
+              <p class="text-muted small">Use only when normal volunteer attendance process cannot be completed</p>
+            </div>
+          </div>
+
+          <!-- Warning Banner -->
+          <div class="alert alert-warning d-flex align-items-start gap-3 mb-4 border-0 shadow-sm" style="background: linear-gradient(135deg, #fff3cd 0%, #ffeeba 100%);">
+            <i class="bi bi-shield-exclamation fs-3 text-warning"></i>
+            <div>
+              <h6 class="fw-bold mb-1">Admin-Only Emergency Feature</h6>
+              <p class="mb-0 small">This feature bypasses the normal QR scan + photo verification workflow. Use only for: device failure, camera issues, QR scanner failure, photo upload failure, network problems, or other technical emergencies. All entries are audit-logged.</p>
+            </div>
+          </div>
+
+          <div class="row">
+            <!-- LEFT: Selection Form -->
+            <div class="col-lg-5 mb-4">
+              <div class="card border border-slate-200 p-4">
+                <h5 class="fw-bold mb-3 border-bottom pb-2"><i class="bi bi-sliders me-2"></i>Attendance Details</h5>
+
+                <!-- Step 1: Event -->
+                <div class="mb-3">
+                  <label class="form-label fw-bold small text-uppercase text-muted">1. Select Event</label>
+                  <select id="ema-event-select" class="form-select" onchange="onEmaEventChange()">
+                    <option value="">-- Choose Event --</option>
+                  </select>
+                </div>
+
+                <!-- Step 2: Session -->
+                <div class="mb-3">
+                  <label class="form-label fw-bold small text-uppercase text-muted">2. Select Session</label>
+                  <select id="ema-session-select" class="form-select" disabled>
+                    <option value="">-- Choose Session --</option>
+                  </select>
+                </div>
+
+                <!-- Step 3: Search Student -->
+                <div class="mb-3">
+                  <label class="form-label fw-bold small text-uppercase text-muted">3. Search Student</label>
+                  <div class="input-group">
+                    <input type="text" id="ema-student-search" class="form-control" placeholder="Registration No. or Name..." autocomplete="off">
+                    <button class="btn btn-primary" onclick="searchStudentForEma()" id="ema-search-btn">
+                      <i class="bi bi-search"></i> Search
+                    </button>
+                  </div>
+                  <!-- Search Results Dropdown -->
+                  <div id="ema-search-results" class="list-group mt-1 shadow-sm" style="max-height: 200px; overflow-y: auto; display: none;"></div>
+                </div>
+
+                <!-- Step 4: Reason -->
+                <div class="mb-3">
+                  <label class="form-label fw-bold small text-uppercase text-muted">4. Reason for Manual Entry</label>
+                  <select id="ema-reason-select" class="form-select" onchange="toggleEmaOtherReason()">
+                    <option value="">-- Select Reason --</option>
+                    <option value="Camera failure">Camera failure</option>
+                    <option value="QR scan failed">QR scan failed</option>
+                    <option value="Photo upload failed">Photo upload failed</option>
+                    <option value="Network issue">Network issue</option>
+                    <option value="Volunteer device failure">Volunteer device failure</option>
+                    <option value="Apps Script error">Apps Script error</option>
+                    <option value="Emergency">Emergency</option>
+                    <option value="Other">Other (specify below)</option>
+                  </select>
+                  <textarea id="ema-other-reason" class="form-control mt-2 d-none" rows="2" placeholder="Enter specific reason..."></textarea>
+                </div>
+              </div>
+            </div>
+
+            <!-- RIGHT: Student Details & Confirmation -->
+            <div class="col-lg-7 mb-4">
+              <!-- Student Preview Card -->
+              <div id="ema-student-card" class="card border border-slate-200 p-4 d-none">
+                <h5 class="fw-bold mb-3 border-bottom pb-2"><i class="bi bi-person-badge me-2"></i>Student Details</h5>
+                <div class="d-flex align-items-center gap-3 mb-3">
+                  <div class="rounded-circle bg-primary bg-opacity-10 text-primary d-flex align-items-center justify-content-center" style="width: 56px; height: 56px; min-width: 56px;">
+                    <i class="bi bi-person-fill fs-3"></i>
+                  </div>
+                  <div>
+                    <h5 id="ema-student-name" class="fw-bold mb-0">--</h5>
+                    <span id="ema-student-reg" class="text-muted small">Reg: --</span>
+                  </div>
+                </div>
+                <div class="row g-3 mb-4">
+                  <div class="col-6">
+                    <div class="bg-light rounded p-3">
+                      <small class="text-muted fw-bold text-uppercase d-block">Department</small>
+                      <span id="ema-student-dept" class="fw-semibold">--</span>
+                    </div>
+                  </div>
+                  <div class="col-6">
+                    <div class="bg-light rounded p-3">
+                      <small class="text-muted fw-bold text-uppercase d-block">Email</small>
+                      <span id="ema-student-email" class="fw-semibold">--</span>
+                    </div>
+                  </div>
+                  <div class="col-6">
+                    <div class="bg-light rounded p-3">
+                      <small class="text-muted fw-bold text-uppercase d-block">Event</small>
+                      <span id="ema-detail-event" class="fw-semibold">--</span>
+                    </div>
+                  </div>
+                  <div class="col-6">
+                    <div class="bg-light rounded p-3">
+                      <small class="text-muted fw-bold text-uppercase d-block">Session</small>
+                      <span id="ema-detail-session" class="fw-semibold">--</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Confirmation button -->
+                <div id="ema-action-area">
+                  <button id="ema-mark-btn" class="btn btn-warning btn-lg w-100 fw-bold" onclick="submitEmergencyAttendance()">
+                    <i class="bi bi-check-circle-fill me-2"></i>Mark Present (Manual)
+                  </button>
+                </div>
+
+                <!-- Success / Duplicate messages -->
+                <div id="ema-result-message" class="mt-3 d-none"></div>
+              </div>
+
+              <!-- Empty state -->
+              <div id="ema-empty-state" class="card border border-slate-200 p-5 text-center">
+                <i class="bi bi-person-plus-fill fs-1 text-muted mb-3"></i>
+                <h5 class="text-muted fw-bold">No Student Selected</h5>
+                <p class="text-muted small">Select an event, session, and search for a student to mark manual attendance.</p>
+              </div>
+
+              <!-- Recent Manual Entries Log -->
+              <div class="card border border-slate-200 p-4 mt-4">
+                <h5 class="fw-bold mb-3 border-bottom pb-2"><i class="bi bi-clock-history me-2"></i>Recent Manual Entries (This Session)</h5>
+                <div id="ema-recent-log" class="small">
+                  <p class="text-muted mb-0">No manual entries yet.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
       </main>
 
     </div>
@@ -834,6 +981,7 @@
       else if (panelId === 'volunteers') fetchVolunteersList();
       else if (panelId === 'verification') loadVerificationQueue();
       else if (panelId === 'reports') loadReportsDropdowns();
+      else if (panelId === 'emergency') loadEmergencyPanel();
     }
 
     // ==========================================
@@ -1767,6 +1915,259 @@
         }
       );
     });
+
+    /* 8. EMERGENCY MANUAL ATTENDANCE */
+    var emaSelectedStudent = null;
+    var emaStudentsCache = [];
+    var emaManualLog = [];
+
+    function loadEmergencyPanel() {
+      // Load events into the emergency event dropdown
+      execApi(
+        'getAdminEvents',
+        {},
+        function(response) {
+          if (response.success) {
+            var sel = document.getElementById('ema-event-select');
+            sel.innerHTML = '<option value="">-- Choose Event --</option>';
+            (response.events || []).forEach(function(ev) {
+              sel.innerHTML += '<option value="' + ev.eventId + '" data-name="' + ev.eventName + '">' + ev.eventName + ' (' + (ev.eventDate || '') + ')</option>';
+            });
+          }
+        }
+      );
+      // Also pre-load students list for searching
+      execApi(
+        'getStudentsList',
+        {},
+        function(response) {
+          if (response.success) {
+            emaStudentsCache = response.students || [];
+          }
+        }
+      );
+      // Reset UI
+      resetEmaUI();
+    }
+
+    function resetEmaUI() {
+      emaSelectedStudent = null;
+      document.getElementById('ema-student-card').classList.add('d-none');
+      document.getElementById('ema-empty-state').classList.remove('d-none');
+      document.getElementById('ema-result-message').classList.add('d-none');
+      document.getElementById('ema-result-message').innerHTML = '';
+      document.getElementById('ema-student-search').value = '';
+      document.getElementById('ema-search-results').style.display = 'none';
+      document.getElementById('ema-reason-select').value = '';
+      document.getElementById('ema-other-reason').classList.add('d-none');
+      document.getElementById('ema-other-reason').value = '';
+      var markBtn = document.getElementById('ema-mark-btn');
+      markBtn.disabled = false;
+      markBtn.innerHTML = '<i class="bi bi-check-circle-fill me-2"></i>Mark Present (Manual)';
+    }
+
+    function onEmaEventChange() {
+      var eventId = document.getElementById('ema-event-select').value;
+      var sessionSel = document.getElementById('ema-session-select');
+      sessionSel.innerHTML = '<option value="">-- Choose Session --</option>';
+      sessionSel.disabled = true;
+      resetEmaUI();
+
+      if (!eventId) return;
+
+      // Fetch sessions for the selected event
+      execApi(
+        'getEventSessions',
+        { eventId: eventId },
+        function(response) {
+          if (response.success && response.sessions) {
+            response.sessions.forEach(function(s) {
+              var label = s.sessionName + ' [' + s.status + ']';
+              sessionSel.innerHTML += '<option value="' + s.sessionName + '" data-status="' + s.status + '">' + label + '</option>';
+            });
+            sessionSel.disabled = false;
+          }
+        }
+      );
+    }
+
+    function searchStudentForEma() {
+      var query = document.getElementById('ema-student-search').value.trim().toLowerCase();
+      var resultsDiv = document.getElementById('ema-search-results');
+      resultsDiv.innerHTML = '';
+      resultsDiv.style.display = 'none';
+
+      if (!query || query.length < 2) {
+        showStatusToast('Enter at least 2 characters to search.', 'warning');
+        return;
+      }
+
+      var matches = emaStudentsCache.filter(function(s) {
+        var regMatch = s.registrationNumber && s.registrationNumber.toString().toLowerCase().indexOf(query) !== -1;
+        var nameMatch = s.name && s.name.toLowerCase().indexOf(query) !== -1;
+        return regMatch || nameMatch;
+      });
+
+      if (matches.length === 0) {
+        resultsDiv.innerHTML = '<div class="list-group-item text-muted small py-2">No students found matching "' + query + '"</div>';
+        resultsDiv.style.display = 'block';
+        return;
+      }
+
+      matches.slice(0, 15).forEach(function(s) {
+        var item = document.createElement('button');
+        item.type = 'button';
+        item.className = 'list-group-item list-group-item-action py-2 d-flex justify-content-between align-items-center';
+        item.innerHTML = '<div><strong>' + s.name + '</strong><br><small class="text-muted">' + s.registrationNumber + ' &middot; ' + (s.department || '') + '</small></div><i class="bi bi-arrow-right text-primary"></i>';
+        item.onclick = function() { selectEmaStudent(s); };
+        resultsDiv.appendChild(item);
+      });
+
+      if (matches.length > 15) {
+        resultsDiv.innerHTML += '<div class="list-group-item text-muted small py-2 text-center">Showing 15 of ' + matches.length + ' matches. Refine your search.</div>';
+      }
+
+      resultsDiv.style.display = 'block';
+    }
+
+    // Allow search on Enter key
+    document.getElementById('ema-student-search').addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') { e.preventDefault(); searchStudentForEma(); }
+    });
+
+    function selectEmaStudent(student) {
+      emaSelectedStudent = student;
+      document.getElementById('ema-search-results').style.display = 'none';
+      document.getElementById('ema-student-search').value = student.name + ' (' + student.registrationNumber + ')';
+
+      // Populate student card
+      document.getElementById('ema-student-name').innerText = student.name;
+      document.getElementById('ema-student-reg').innerText = 'Reg: ' + student.registrationNumber;
+      document.getElementById('ema-student-dept').innerText = student.department || '--';
+      document.getElementById('ema-student-email').innerText = student.email || '--';
+
+      var eventSel = document.getElementById('ema-event-select');
+      var sessionSel = document.getElementById('ema-session-select');
+      document.getElementById('ema-detail-event').innerText = eventSel.options[eventSel.selectedIndex] ? eventSel.options[eventSel.selectedIndex].text : '--';
+      document.getElementById('ema-detail-session').innerText = sessionSel.value || '--';
+
+      // Show card, hide empty state
+      document.getElementById('ema-student-card').classList.remove('d-none');
+      document.getElementById('ema-empty-state').classList.add('d-none');
+      document.getElementById('ema-result-message').classList.add('d-none');
+
+      var markBtn = document.getElementById('ema-mark-btn');
+      markBtn.disabled = false;
+      markBtn.innerHTML = '<i class="bi bi-check-circle-fill me-2"></i>Mark Present (Manual)';
+    }
+
+    function toggleEmaOtherReason() {
+      var val = document.getElementById('ema-reason-select').value;
+      if (val === 'Other') {
+        document.getElementById('ema-other-reason').classList.remove('d-none');
+      } else {
+        document.getElementById('ema-other-reason').classList.add('d-none');
+      }
+    }
+
+    function submitEmergencyAttendance() {
+      var eventId = document.getElementById('ema-event-select').value;
+      var sessionName = document.getElementById('ema-session-select').value;
+      var reason = document.getElementById('ema-reason-select').value;
+      var resultDiv = document.getElementById('ema-result-message');
+      var markBtn = document.getElementById('ema-mark-btn');
+
+      // Validations
+      if (!eventId) { showStatusToast('Please select an event.', 'warning'); return; }
+      if (!sessionName) { showStatusToast('Please select a session.', 'warning'); return; }
+      if (!emaSelectedStudent) { showStatusToast('Please search and select a student.', 'warning'); return; }
+      if (!reason) { showStatusToast('Please select a reason for manual entry.', 'warning'); return; }
+
+      var finalReason = reason;
+      if (reason === 'Other') {
+        var otherText = document.getElementById('ema-other-reason').value.trim();
+        if (!otherText) { showStatusToast('Please specify the reason in the text field.', 'warning'); return; }
+        finalReason = 'Other: ' + otherText;
+      }
+
+      // Get admin session
+      var session = getActiveSession();
+      var adminId = session ? (session.userId || session.username || 'admin') : 'admin';
+
+      // Get event name
+      var eventSel = document.getElementById('ema-event-select');
+      var eventName = eventSel.options[eventSel.selectedIndex] ? eventSel.options[eventSel.selectedIndex].getAttribute('data-name') || eventSel.options[eventSel.selectedIndex].text : '';
+
+      markBtn.disabled = true;
+      markBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Submitting...';
+
+      execApi(
+        'markManualAttendance',
+        {
+          studentId: emaSelectedStudent.studentId,
+          registrationNumber: emaSelectedStudent.registrationNumber,
+          studentName: emaSelectedStudent.name,
+          department: emaSelectedStudent.department || '',
+          eventId: eventId,
+          eventName: eventName,
+          sessionName: sessionName,
+          reason: finalReason,
+          adminId: adminId
+        },
+        function(response) {
+          markBtn.disabled = false;
+          if (response.success) {
+            markBtn.innerHTML = '<i class="bi bi-check-lg me-2"></i>Marked Successfully!';
+            markBtn.classList.remove('btn-warning');
+            markBtn.classList.add('btn-success');
+            resultDiv.className = 'mt-3 alert alert-success d-flex align-items-center gap-2';
+            resultDiv.innerHTML = '<i class="bi bi-check-circle-fill"></i>' + response.message;
+
+            // Add to session log
+            emaManualLog.unshift({
+              name: emaSelectedStudent.name,
+              reg: emaSelectedStudent.registrationNumber,
+              event: eventName,
+              session: sessionName,
+              reason: finalReason,
+              time: new Date().toLocaleTimeString()
+            });
+            renderEmaLog();
+
+            // Reset for next entry after 2 seconds
+            setTimeout(function() {
+              markBtn.classList.remove('btn-success');
+              markBtn.classList.add('btn-warning');
+              resetEmaUI();
+            }, 2000);
+          } else {
+            markBtn.innerHTML = '<i class="bi bi-check-circle-fill me-2"></i>Mark Present (Manual)';
+            resultDiv.className = 'mt-3 alert alert-danger d-flex align-items-center gap-2';
+            resultDiv.innerHTML = '<i class="bi bi-exclamation-triangle-fill"></i>' + response.message;
+          }
+        },
+        function(err) {
+          markBtn.disabled = false;
+          markBtn.innerHTML = '<i class="bi bi-check-circle-fill me-2"></i>Mark Present (Manual)';
+          resultDiv.className = 'mt-3 alert alert-danger d-flex align-items-center gap-2';
+          resultDiv.innerHTML = '<i class="bi bi-exclamation-triangle-fill"></i>Error: ' + err.message;
+        }
+      );
+    }
+
+    function renderEmaLog() {
+      var logDiv = document.getElementById('ema-recent-log');
+      if (emaManualLog.length === 0) {
+        logDiv.innerHTML = '<p class="text-muted mb-0">No manual entries yet.</p>';
+        return;
+      }
+      var html = '<div class="table-responsive"><table class="table table-sm table-hover mb-0"><thead><tr><th>Time</th><th>Student</th><th>Reg No</th><th>Session</th><th>Reason</th></tr></thead><tbody>';
+      emaManualLog.forEach(function(entry) {
+        html += '<tr><td>' + entry.time + '</td><td>' + entry.name + '</td><td>' + entry.reg + '</td><td>' + entry.session + '</td><td><span class="badge bg-warning text-dark">' + entry.reason + '</span></td></tr>';
+      });
+      html += '</tbody></table></div>';
+      logDiv.innerHTML = html;
+    }
 
   </script>
 </body>
