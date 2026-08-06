@@ -12,7 +12,7 @@ var SESSION_KEY = "ieee_gas_session";
 var activeStream = null;
 
 // Configured Apps Script Web App API Endpoint URL
-var WEB_APP_URL = "https://script.google.com/macros/s/AKfycbz_REPLACE_WITH_YOUR_DEPLOYED_GAS_WEB_APP_ID/exec";
+var WEB_APP_URL = "https://script.google.com/macros/s/AKfycbw2_-AfR5D2AdQzCURmcZruTB7pDtDmsC4z4bO2fJoVK0EZ59_Jp2uegc-EQQ4WdWim/exec";
 
 /**
  * Universal API Client for Google Apps Script Web App Endpoint & Container Fallback
