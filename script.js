@@ -12,7 +12,7 @@ var SESSION_KEY = "ieee_gas_session";
 var activeStream = null;
 
 // Configured Apps Script Web App API Endpoint URL
-var WEB_APP_URL = "https://script.google.com/macros/s/AKfycbw2_-AfR5D2AdQzCURmcZruTB7pDtDmsC4z4bO2fJoVK0EZ59_Jp2uegc-EQQ4WdWim/exec";
+var WEB_APP_URL = "https://script.google.com/macros/s/AKfycbz_REPLACE_WITH_YOUR_DEPLOYED_GAS_WEB_APP_ID/exec";
 
 /**
  * Universal API Client for Google Apps Script Web App Endpoint & Container Fallback
@@ -29,27 +29,31 @@ function callBackendApi(action, payload) {
 
       switch(action) {
         case 'login': runner.verifyLoginCredentials(payload.username, payload.password); break;
-        case 'updatePassword': runner.updateSessionPassword(payload.userId, payload.oldP, payload.newP, payload.role); break;
+        case 'updatePassword': runner.updateSessionPassword(payload.userId, payload.oldP || payload.oldPassword, payload.newP || payload.newPassword, payload.role); break;
         case 'getVolunteerEvents': runner.getVolunteerEventsList(); break;
         case 'getActiveSession': runner.getActiveSessionForEvent(payload.eventId); break;
         case 'scanQRToken': runner.scanStudentQRToken(payload.qrToken); break;
         case 'submitAttendance': runner.submitStudentAttendanceLogs(payload.studentId, payload.eventId, payload.sessionName, payload.facePhotoBase64, payload.idPhotoBase64, payload.volunteerUserId); break;
-        case 'getAdminMetrics': runner.getAdminDashboardMetrics(); break;
         case 'getAdminEvents': runner.getVolunteerEventsList(); break;
-        case 'createEvent': runner.createNewEvent(payload.eventName, payload.eventDate); break;
-        case 'deleteEvent': runner.deleteEventById(payload.eventId); break;
-        case 'manageEventSessions': runner.updateSessionStatus(payload.eventId, payload.actionType, payload.sessionName); break;
+        case 'createEvent': runner.createEvent(payload.eventName, payload.eventDateStr || payload.eventDate, payload.sessionsCount || payload.sessions || 1); break;
+        case 'deleteEvent': runner.deleteEvent(payload.eventId); break;
+        case 'deleteStudent': runner.deleteStudent(payload.studentId); break;
+        case 'getEventSessions': runner.getEventSessions(payload.eventId); break;
+        case 'setSessionStatus':
+        case 'manageEventSessions': runner.setSessionStatus(payload.eventId, payload.sessionName, payload.newStatus || payload.actionType); break;
         case 'uploadStudentsBatch':
         case 'importParticipants': runner.importParticipantsFromExcelArray(payload.rows || payload.studentsList); break;
-        case 'getStudentsList': runner.getStudentsList(); break;
-        case 'getVolunteersList': runner.getVolunteersList(); break;
-        case 'createVolunteer': runner.createNewVolunteer(payload.username, payload.password, payload.name, payload.phone); break;
-        case 'deleteVolunteer': runner.deleteVolunteerById(payload.vId); break;
-        case 'getPendingVerifications': runner.getPendingVerificationsQueue(); break;
-        case 'processVerification': runner.processVerificationDecision(payload.attId, payload.decision, payload.rejectionReason); break;
-        case 'getReportsMatrix': runner.getReportsAttendanceMatrix(payload.eventId); break;
+        case 'getStudentsList': runner.getAdminStudentsList(); break;
+        case 'getVolunteersList': runner.getAdminVolunteersList(); break;
+        case 'createVolunteer': runner.createVolunteerAccount(payload.name, payload.username, payload.password); break;
+        case 'deleteVolunteer': runner.deleteVolunteer(payload.volunteerId || payload.vId); break;
+        case 'getPendingVerifications': runner.getPendingVerifications(); break;
+        case 'processVerification':
+        case 'verifyAttendanceRecord': runner.verifyAttendanceRecord(payload.attId || payload.attendanceId, payload.decision || payload.status, payload.rejectionReason || payload.remarks); break;
+        case 'getReportStats': runner.getReportStats(payload.eventId); break;
+        case 'getReportsMatrix': runner.getAdminAttendanceRecords(payload.eventId); break;
         case 'getStudentProfile': runner.getStudentProfileData(payload.userId); break;
-        case 'getStudentAttendanceHistory': runner.getStudentAttendanceHistory(payload.registrationNumber); break;
+        case 'markManualAttendance': runner.markManualAttendance(payload.studentId, payload.registrationNumber, payload.studentName, payload.department, payload.eventId, payload.eventName, payload.sessionName, payload.reason, payload.adminId); break;
         default: reject(new Error("Unknown GAS runner action: " + action));
       }
       return;
