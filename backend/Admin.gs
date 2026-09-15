@@ -379,38 +379,39 @@ function getEventSessions(eventId) {
     var ss = getSpreadsheet();
     var sessionStatusesSheet = getOrCreateSheet(ss, "SessionStatuses", ["eventId", "sessionName", "status"]);
     
+    // Always deduplicate to clean any repeated rows and restore valid headers
+    deduplicateSessionStatuses();
+
     var targetIdStr = String(eventId).trim();
-    var allSessions = getSheetDataAsJson("SessionStatuses");
-
-    // Auto-clean duplicate rows if sheet has ballooned
-    if (allSessions.length > 50) {
-      deduplicateSessionStatuses();
-      allSessions = getSheetDataAsJson("SessionStatuses");
-    }
-
-    var filtered = allSessions.filter(function(s) {
-      var sId = String(s.eventId || s.eventid || s["event id"] || "").trim();
-      return sId === targetIdStr;
-    });
-
+    var data = sessionStatusesSheet.getDataRange().getValues();
     var uniqueSessions = [];
     var seenSess = {};
-    filtered.forEach(function(s) {
-      var sName = String(s.sessionName || s.sessionname || s["session name"] || "").trim();
-      if (!seenSess[sName]) {
-        seenSess[sName] = true;
-        uniqueSessions.push(s);
-      }
-    });
 
-    // Auto-healing fallback: If no sessions found in SessionStatuses for this event, auto-create them
+    for (var i = 1; i < data.length; i++) {
+      var rowEvId = String(data[i][0]).trim();
+      var rowSessName = String(data[i][1]).trim();
+      var rowStatus = String(data[i][2]).trim();
+
+      if (rowEvId === targetIdStr && rowSessName) {
+        if (!seenSess[rowSessName]) {
+          seenSess[rowSessName] = true;
+          uniqueSessions.push({
+            eventId: data[i][0],
+            sessionName: rowSessName,
+            status: rowStatus || "Locked"
+          });
+        }
+      }
+    }
+
+    // Auto-healing fallback: If no sessions found in SessionStatuses for this event, auto-create them from Events
     if (uniqueSessions.length === 0) {
       var events = getSheetDataAsJson("Events");
       var targetEv = null;
-      for (var i = 0; i < events.length; i++) {
-        var evId = String(events[i].eventId || events[i].eventid || events[i]["event id"] || "").trim();
+      for (var k = 0; k < events.length; k++) {
+        var evId = String(events[k].eventId || events[k].eventid || events[k]["event id"] || "").trim();
         if (evId === targetIdStr) {
-          targetEv = events[i];
+          targetEv = events[k];
           break;
         }
       }

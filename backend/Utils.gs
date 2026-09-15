@@ -95,6 +95,16 @@ function getOrCreateSheet(ss, sheetName, headers) {
     range.setFontWeight("bold");
     range.setBackground("#00629B");
     range.setFontColor("#FFFFFF");
+  } else if (headers && headers.length > 0) {
+    // Sanity check: Ensure row 1 has valid headers, fix if corrupted
+    var firstHeader = String(sheet.getRange(1, 1).getValue()).trim().toLowerCase();
+    if (firstHeader !== String(headers[0]).trim().toLowerCase()) {
+      sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
+      var range = sheet.getRange(1, 1, 1, headers.length);
+      range.setFontWeight("bold");
+      range.setBackground("#00629B");
+      range.setFontColor("#FFFFFF");
+    }
   }
   return sheet;
 }
@@ -180,7 +190,7 @@ function deduplicateSessionStatuses() {
     if (lastRow <= 1) return { success: true, message: "SessionStatuses sheet is empty." };
     
     var data = sheet.getDataRange().getValues();
-    var headers = data[0];
+    var headers = ["eventId", "sessionName", "status"];
     var uniqueMap = {};
     var countBefore = data.length - 1;
     
@@ -189,7 +199,7 @@ function deduplicateSessionStatuses() {
       var sessName = String(data[i][1]).trim();
       var status = String(data[i][2]).trim();
       
-      if (!evId || !sessName) continue;
+      if (!evId || !sessName || evId.toLowerCase() === "eventid") continue;
       
       var key = evId.toLowerCase() + "_" + sessName.toLowerCase();
       if (!uniqueMap[key]) {
@@ -205,7 +215,11 @@ function deduplicateSessionStatuses() {
     }
     
     sheet.clearContents();
-    sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
+    sheet.getRange(1, 1, 1, 3).setValues([headers]);
+    var headerRange = sheet.getRange(1, 1, 1, 3);
+    headerRange.setFontWeight("bold");
+    headerRange.setBackground("#00629B");
+    headerRange.setFontColor("#FFFFFF");
     
     var newRows = [];
     for (var k in uniqueMap) {
