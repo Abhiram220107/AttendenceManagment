@@ -161,6 +161,39 @@ body {
 }
 
 /* Force Light Theme & High-Contrast Quiet Zone for QR Codes (Fixes Dark Mode scanning failures) */
+#qr-modal,
+#qr-modal .modal-content,
+#student-qr-modal,
+#student-qr-modal .modal-content {
+  background-color: #FFFFFF !important;
+  background: #FFFFFF !important;
+  color: #1E293B !important;
+  color-scheme: light !important;
+}
+
+#qr-modal .modal-header,
+#qr-modal .modal-body,
+#qr-modal .modal-footer,
+#student-qr-modal .modal-header,
+#student-qr-modal .modal-body,
+#student-qr-modal .modal-footer {
+  background-color: #FFFFFF !important;
+  background: #FFFFFF !important;
+  color: #1E293B !important;
+  color-scheme: light !important;
+  border-color: #E2E8F0 !important;
+}
+
+#qr-modal h4, #qr-modal h5, #qr-modal p,
+#student-qr-modal h4, #student-qr-modal h5, #student-qr-modal p {
+  color: #1E293B !important;
+}
+
+#qr-modal .text-muted,
+#student-qr-modal .text-muted {
+  color: #64748B !important;
+}
+
 #qr-canvas-holder, 
 .qr-container,
 #hidden-qr-element {
@@ -170,19 +203,51 @@ body {
   filter: none !important;
   -webkit-filter: none !important;
   padding: 16px !important;
-  border-radius: 12px !important;
-  box-shadow: 0 0 0 8px #FFFFFF, 0 8px 24px rgba(0, 0, 0, 0.12) !important;
+  border-radius: 14px !important;
+  box-shadow: 0 0 0 10px #FFFFFF, 0 8px 24px rgba(0, 0, 0, 0.15) !important;
   display: inline-block !important;
+  border: 1px solid #E2E8F0 !important;
 }
 
 #qr-canvas-holder img,
-#qr-canvas-holder canvas {
+#qr-canvas-holder canvas,
+#qr-canvas-holder svg {
   background-color: #FFFFFF !important;
+  background: #FFFFFF !important;
   color-scheme: light !important;
   filter: none !important;
   -webkit-filter: none !important;
   box-shadow: none !important;
   padding: 0 !important;
+  display: block !important;
+  margin: 0 auto !important;
+}
+
+@media (prefers-color-scheme: dark) {
+  #qr-modal .modal-content,
+  #qr-modal .modal-header,
+  #qr-modal .modal-body,
+  #qr-modal .modal-footer,
+  #student-qr-modal .modal-content,
+  #student-qr-modal .modal-header,
+  #student-qr-modal .modal-body,
+  #student-qr-modal .modal-footer,
+  #qr-canvas-holder,
+  #qr-canvas-holder img,
+  #qr-canvas-holder canvas,
+  #qr-canvas-holder svg {
+    background-color: #FFFFFF !important;
+    background: #FFFFFF !important;
+    color: #1E293B !important;
+    color-scheme: light !important;
+    filter: none !important;
+    -webkit-filter: none !important;
+  }
+  
+  #qr-modal h4, #qr-modal h5, #qr-modal p,
+  #student-qr-modal h4, #student-qr-modal h5, #student-qr-modal p {
+    color: #1E293B !important;
+  }
 }
 
 /* Status badges */

@@ -93,22 +93,22 @@
   <!-- Modal: View QR Code -->
   <div id="qr-modal" class="modal fade" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-sm">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title font-bold">Your Identity QR Code</h5>
+      <div class="modal-content border-0 shadow-lg" style="background-color: #FFFFFF !important; background: #FFFFFF !important; color: #1E293B !important; color-scheme: light !important;">
+        <div class="modal-header border-bottom border-light" style="background-color: #FFFFFF !important; background: #FFFFFF !important;">
+          <h5 class="modal-title font-bold" style="color: #1E293B !important;">Your Identity QR Code</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
-        <div class="modal-body text-center">
-          <h4 id="qr-name" class="fw-bold mb-1">-</h4>
-          <p id="qr-reg" class="text-muted small">-</p>
+        <div class="modal-body text-center" style="background-color: #FFFFFF !important; background: #FFFFFF !important; color-scheme: light !important;">
+          <h4 id="qr-name" class="fw-bold mb-1" style="color: #1E293B !important;">-</h4>
+          <p id="qr-reg" class="small mb-3" style="color: #64748B !important;">-</p>
           
           <!-- QR Canvas element -->
-          <div id="qr-canvas-holder" class="my-4 d-inline-block p-4 border rounded shadow-sm" style="background-color: #FFFFFF !important; color-scheme: light !important; filter: none !important; -webkit-filter: none !important;"></div>
+          <div id="qr-canvas-holder" class="my-3 d-inline-block p-4 border rounded-3" style="background-color: #FFFFFF !important; background: #FFFFFF !important; color-scheme: light !important; filter: none !important; -webkit-filter: none !important; box-shadow: 0 0 0 10px #FFFFFF, 0 8px 24px rgba(0,0,0,0.12) !important;"></div>
           
-          <p class="text-muted small px-3">Present this QR code to the volunteer scanner to record your daily attendance.</p>
+          <p class="small px-2 mt-3 mb-0" style="color: #64748B !important;">Present this QR code to the volunteer scanner to record your daily attendance.</p>
         </div>
-        <div class="modal-footer">
-          <button class="btn btn-light w-100" data-bs-dismiss="modal">Close</button>
+        <div class="modal-footer border-top border-light" style="background-color: #FFFFFF !important; background: #FFFFFF !important;">
+          <button class="btn btn-light border w-100 font-semibold text-dark" data-bs-dismiss="modal">Close</button>
         </div>
       </div>
     </div>
@@ -307,13 +307,15 @@
       holder.innerHTML = "";
       
       if (studentProfile.qrCodeURL) {
-        holder.innerHTML = `<img src="${formatDriveDirectLink(studentProfile.qrCodeURL)}" style="width: 180px; height: 180px; object-fit: contain;" />`;
+        holder.innerHTML = `<img src="${formatDriveDirectLink(studentProfile.qrCodeURL)}" style="width: 180px; height: 180px; object-fit: contain; background: #FFFFFF !important; background-color: #FFFFFF !important; filter: none !important; -webkit-filter: none !important;" />`;
       } else {
-        // Fallback local draw
+        // Explicit black on pure white for flawless dark-mode scanning
         new QRCode(holder, {
           text: studentProfile.qrToken,
           width: 180,
           height: 180,
+          colorDark: "#000000",
+          colorLight: "#FFFFFF",
           correctLevel: QRCode.CorrectLevel.H
         });
       }
