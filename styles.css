@@ -194,8 +194,7 @@ body {
 }
 
 #qr-canvas-holder, 
-.qr-container,
-#hidden-qr-element {
+.qr-container {
   background-color: #FFFFFF !important;
   background: #FFFFFF !important;
   color-scheme: light !important;
@@ -206,6 +205,20 @@ body {
   box-shadow: 0 0 0 10px #FFFFFF, 0 8px 24px rgba(0, 0, 0, 0.15) !important;
   display: inline-block !important;
   border: 1px solid #E2E8F0 !important;
+}
+
+#hidden-qr-element {
+  display: none !important;
+  visibility: hidden !important;
+  position: absolute !important;
+  left: -9999px !important;
+  top: -9999px !important;
+  width: 0 !important;
+  height: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: none !important;
+  box-shadow: none !important;
 }
 
 #qr-canvas-holder img,
