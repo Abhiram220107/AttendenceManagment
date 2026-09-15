@@ -1,0 +1,6 @@
+# Node / clasp temporary files
+node_modules/
+.clasprc.json
+*.log
+.DS_Store
+Thumbs.db

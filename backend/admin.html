@@ -1,0 +1,2179 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Attenza | Admin Portal</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+  
+  <!-- CDNs for browser-based Excel parsing (SheetJS) and QR Code rendering (QRCode.js) -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  
+  <!-- Common CSS Styles -->
+  <link rel="stylesheet" href="styles.css">
+  <?!= include('styles'); ?>
+</head>
+<body>
+
+  <div class="d-flex">
+    
+    <!-- Collapsible Sidebar -->
+    <aside id="sidebar" class="sidebar-slate d-flex flex-column">
+      <div class="sidebar-brand d-flex align-items-center justify-content-start px-4 gap-2">
+        <img src="logo-dark.svg" alt="Attenza" style="height: 36px;">
+      </div>
+
+      <nav class="flex-grow-1 py-4 overflow-auto">
+        <a href="#" onclick="switchPanel('dashboard')" id="nav-dashboard" class="sidebar-item active">
+          <i class="bi bi-speedometer2"></i> Dashboard
+        </a>
+        <a href="#" onclick="switchPanel('events')" id="nav-events" class="sidebar-item">
+          <i class="bi bi-calendar-event"></i> Events
+        </a>
+        <a href="#" onclick="switchPanel('upload')" id="nav-upload" class="sidebar-item">
+          <i class="bi bi-file-earmark-arrow-up"></i> Upload Participants
+        </a>
+        <a href="#" onclick="switchPanel('students')" id="nav-students" class="sidebar-item">
+          <i class="bi bi-people"></i> Students
+        </a>
+        <a href="#" onclick="switchPanel('volunteers')" id="nav-volunteers" class="sidebar-item">
+          <i class="bi bi-shield-check"></i> Volunteers
+        </a>
+        <a href="#" onclick="switchPanel('verification')" id="nav-verification" class="sidebar-item">
+          <i class="bi bi-clipboard-check"></i> Verification
+        </a>
+        <a href="#" onclick="switchPanel('emergency')" id="nav-emergency" class="sidebar-item">
+          <i class="bi bi-exclamation-triangle-fill"></i> Emergency Attendance
+        </a>
+        <a href="#" onclick="switchPanel('reports')" id="nav-reports" class="sidebar-item">
+          <i class="bi bi-graph-up-arrow"></i> Reports
+        </a>
+        <a href="#" onclick="switchPanel('settings')" id="nav-settings" class="sidebar-item">
+          <i class="bi bi-gear"></i> Settings
+        </a>
+      </nav>
+
+      <div class="p-3 border-top border-slate-800 bg-slate-950/20">
+        <div class="d-flex align-items-center gap-2 mb-3">
+          <div class="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+            <i class="bi bi-person-fill"></i>
+          </div>
+          <div class="text-truncate">
+            <p id="admin-display-name" class="small font-bold mb-0 text-white truncate">Admin User</p>
+            <p id="admin-display-email" class="small text-muted mb-0 truncate" style="font-size: 0.7rem;">admin</p>
+          </div>
+        </div>
+        <button onclick="clearSessionAndLogout()" class="btn btn-outline-danger w-100 btn-sm py-2">
+          <i class="bi bi-box-arrow-right"></i> Logout
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main Workspace -->
+    <div class="flex-grow-1 d-flex flex-column min-w-0" style="min-height: 100vh;">
+      
+      <!-- Top header navbar -->
+      <header class="navbar navbar-expand-lg navbar-light bg-white border-bottom px-4" style="height: 64px;">
+        <button class="btn btn-light d-lg-none me-3" onclick="document.getElementById('sidebar').classList.toggle('open')">
+          <i class="bi bi-list fs-4"></i>
+        </button>
+        <div class="d-flex align-items-center gap-2">
+          <img src="icon-light.svg" alt="Attenza" style="height: 28px;">
+          <h1 class="fs-5 font-bold mb-0">Attenza</h1>
+        </div>
+        <div class="ms-auto">
+          <span class="badge bg-primary px-3 py-2 small">Admin Portal</span>
+        </div>
+      </header>
+
+      <!-- Panel views container -->
+      <main class="flex-grow-1 p-4 md:p-5 overflow-auto">
+        
+        <!-- ====================================================
+            PANEL: OVERVIEW DASHBOARD
+            ==================================================== -->
+        <section id="panel-dashboard" class="admin-panel d-none">
+          <div class="d-flex align-items-center justify-content-between mb-4">
+            <div>
+              <h2 class="fw-bold text-gray-900 mb-0">Dashboard Overview</h2>
+              <p class="text-muted small">Real-time attendance stats</p>
+            </div>
+            <div>
+              <select id="dash-event-select" onchange="loadDashboardStats()" class="form-select border border-slate-200">
+                <option value="">Select Event...</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="grid gap-4 row row-cols-1 row-cols-md-2 row-cols-lg-4 mb-5">
+            <!-- Stat card: Total Students -->
+            <div class="col mb-3">
+              <div class="card card-premium p-4 border-0">
+                <div class="d-flex align-items-center justify-content-between">
+                  <div>
+                    <p class="text-muted small font-medium mb-1">Total Registered</p>
+                    <h3 id="stat-total" class="fw-bold mb-0">0</h3>
+                  </div>
+                  <div class="stat-icon bg-primary bg-opacity-10 text-primary">
+                    <i class="bi bi-people-fill fs-4"></i>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Stat card: Verified -->
+            <div class="col mb-3">
+              <div class="card card-premium p-4 border-0">
+                <div class="d-flex align-items-center justify-content-between">
+                  <div>
+                    <p class="text-muted small font-medium mb-1">Verified Checks</p>
+                    <h3 id="stat-verified" class="fw-bold text-success mb-0">0</h3>
+                  </div>
+                  <div class="stat-icon bg-success bg-opacity-10 text-success">
+                    <i class="bi bi-check-circle-fill fs-4"></i>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Stat card: Pending -->
+            <div class="col mb-3">
+              <div class="card card-premium p-4 border-0">
+                <div class="d-flex align-items-center justify-content-between">
+                  <div>
+                    <p class="text-muted small font-medium mb-1">Pending Audit</p>
+                    <h3 id="stat-pending" class="fw-bold text-warning mb-0">0</h3>
+                  </div>
+                  <div class="stat-icon bg-warning bg-opacity-10 text-warning">
+                    <i class="bi bi-clock-history fs-4"></i>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Stat card: Rejected -->
+            <div class="col mb-3">
+              <div class="card card-premium p-4 border-0">
+                <div class="d-flex align-items-center justify-content-between">
+                  <div>
+                    <p class="text-muted small font-medium mb-1">Rejected Checks</p>
+                    <h3 id="stat-rejected" class="fw-bold text-danger mb-0">0</h3>
+                  </div>
+                  <div class="stat-icon bg-danger bg-opacity-10 text-danger">
+                    <i class="bi bi-x-circle-fill fs-4"></i>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Session breakdown list -->
+          <div class="mb-5">
+            <h3 class="fs-6 font-bold mb-4">Session-wise Attendance Breakdown (Verified Only)</h3>
+            <div class="row" id="dash-session-breakdown">
+              <!-- Rendered programmatically -->
+            </div>
+          </div>
+
+          <!-- Quick shortcuts -->
+          <div class="card border border-slate-200 bg-white p-4">
+            <h3 class="fs-6 font-bold mb-3">Quick Navigation Shortcuts</h3>
+            <div class="row row-cols-1 row-cols-md-3 g-3">
+              <div class="col">
+                <button onclick="switchPanel('verification')" class="btn btn-light border text-start w-100 p-3 h-100">
+                  <div class="fw-semibold small">Verification Audit Queue</div>
+                  <div class="text-muted small mt-1">Audit volunteer uploads side-by-side</div>
+                </button>
+              </div>
+              <div class="col">
+                <button onclick="switchPanel('upload')" class="btn btn-light border text-start w-100 p-3 h-100">
+                  <div class="fw-semibold small">Import Student List</div>
+                  <div class="text-muted small mt-1">Upload registration Excel sheets</div>
+                </button>
+              </div>
+              <div class="col">
+                <button onclick="switchPanel('reports')" class="btn btn-light border text-start w-100 p-3 h-100">
+                  <div class="fw-semibold small">View Report Grid</div>
+                  <div class="text-muted small mt-1">Check grid sheets and export downloads</div>
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+
+        <!-- ====================================================
+            PANEL: EVENTS MANAGEMENT
+            ==================================================== -->
+        <section id="panel-events" class="admin-panel d-none">
+          <div class="d-flex align-items-center justify-content-between mb-4">
+            <div>
+              <h2 class="fw-bold text-gray-900 mb-0">Events Management</h2>
+              <p class="text-muted small">Configure active events days range</p>
+            </div>
+            <button onclick="openCreateEventModal()" class="btn btn-primary">
+              <i class="bi bi-plus-lg"></i> Create Event
+            </button>
+          </div>
+
+          <div class="card border border-slate-200 overflow-hidden">
+            <div class="table-responsive">
+              <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                  <tr>
+                    <th>Event Name</th>
+                    <th>Event Date</th>
+                    <th>Attendance Sessions</th>
+                    <th class="text-end">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="events-table-body">
+                  <!-- Rendered dynamically -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+
+        <!-- ====================================================
+            PANEL: UPLOAD PARTICIPANTS
+            ==================================================== -->
+        <section id="panel-upload" class="admin-panel d-none">
+          <div>
+            <h2 class="fw-bold text-gray-900 mb-0">Upload Participants</h2>
+            <p class="text-muted small">Import registration lists directly from Excel spreadsheets</p>
+          </div>
+
+          <div class="row mt-4">
+            <div class="col-lg-8 mb-4">
+              <div class="card border border-slate-200 bg-white p-4">
+                
+                <!-- Drag file input -->
+                <div class="position-relative border border-dashed border-3 border-slate rounded p-5 text-center bg-light hover-bg-gray">
+                  <input 
+                    type="file" 
+                    id="excel-file-input" 
+                    class="position-absolute start-0 top-0 w-100 h-100 opacity-0 cursor-pointer" 
+                    accept=".xlsx, .xls"
+                    onchange="handleExcelFileUpload(event)"
+                  >
+                  <i class="bi bi-file-earmark-spreadsheet fs-1 text-muted mb-3 d-block"></i>
+                  <span id="excel-file-label" class="fw-semibold text-gray-700 block">Click to upload or drag & drop Excel file</span>
+                  <span class="text-muted d-block small mt-1">Supports file formats: .xlsx, .xls</span>
+                </div>
+
+                <div id="upload-feedback" class="mt-4"></div>
+
+                <div class="d-flex justify-content-end gap-2 mt-4">
+                  <button id="import-btn" onclick="submitImportedRows()" class="btn btn-primary px-4 py-2" disabled>
+                    <i class="bi bi-cloud-arrow-up"></i> Import Participants
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Import schema documentation -->
+            <div class="col-lg-4">
+              <div class="card border border-slate-200 bg-white p-4">
+                <h3 class="fs-6 font-bold border-bottom pb-2.5">Spreadsheet Format Specs</h3>
+                <p class="small text-muted mt-3">The importer automatically identifies required columns by their headers:</p>
+                <div class="mt-4 space-y-3">
+                  <div class="d-flex gap-2.5 mb-3">
+                    <span class="badge bg-primary rounded-circle d-flex align-items-center justify-content-center" style="width: 20px; height: 20px; font-size: 0.65rem;">1</span>
+                    <div>
+                      <p class="small font-bold mb-0">Registration Number</p>
+                      <p class="text-muted small" style="font-size: 0.75rem;">Used as registration code & student username</p>
+                    </div>
+                  </div>
+                  <div class="d-flex gap-2.5 mb-3">
+                    <span class="badge bg-primary rounded-circle d-flex align-items-center justify-content-center" style="width: 20px; height: 20px; font-size: 0.65rem;">2</span>
+                    <div>
+                      <p class="small font-bold mb-0">Name</p>
+                      <p class="text-muted small" style="font-size: 0.75rem;">Student full name</p>
+                    </div>
+                  </div>
+                  <div class="d-flex gap-2.5 mb-3">
+                    <span class="badge bg-primary rounded-circle d-flex align-items-center justify-content-center" style="width: 20px; height: 20px; font-size: 0.65rem;">3</span>
+                    <div>
+                      <p class="small font-bold mb-0">Department</p>
+                      <p class="text-muted small" style="font-size: 0.75rem;">Major department abbreviation</p>
+                    </div>
+                  </div>
+                  <div class="d-flex gap-2.5 mb-3">
+                    <span class="badge bg-secondary rounded-circle d-flex align-items-center justify-content-center" style="width: 20px; height: 20px; font-size: 0.65rem;">4</span>
+                    <div>
+                      <p class="small font-bold mb-0">Email (Optional)</p>
+                      <p class="text-muted small" style="font-size: 0.75rem;">Contact email</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+
+        <!-- ====================================================
+            PANEL: STUDENTS DIRECTORY
+            ==================================================== -->
+        <section id="panel-students" class="admin-panel d-none">
+          <div class="d-flex flex-column gap-3 flex-md-row align-items-md-center justify-content-between mb-4">
+            <div>
+              <h2 class="fw-bold text-gray-900 mb-0">Students List</h2>
+              <p class="text-muted small">View unique QR credentials</p>
+            </div>
+            <div class="input-group" style="max-width: 320px;">
+              <span class="input-group-text bg-white text-muted border-end-0"><i class="bi bi-search"></i></span>
+              <input 
+                type="text" 
+                id="search-students" 
+                oninput="renderStudentsTable()" 
+                class="form-control border-start-0" 
+                placeholder="Search name, reg number, dept..."
+              >
+            </div>
+          </div>
+
+          <div class="card border border-slate-200 overflow-hidden">
+            <div class="table-responsive">
+              <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                  <tr>
+                    <th>Reg Number</th>
+                    <th>Name</th>
+                    <th>Department</th>
+                    <th>Email</th>
+                    <th class="text-end">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="students-table-body">
+                  <!-- Rendered programmatically -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+
+        <!-- ====================================================
+            PANEL: VOLUNTEERS DIRECTORY
+            ==================================================== -->
+        <section id="panel-volunteers" class="admin-panel d-none">
+          <div class="d-flex align-items-center justify-content-between mb-4">
+            <div>
+              <h2 class="fw-bold text-gray-900 mb-0">Volunteers Management</h2>
+              <p class="text-muted small">Authorize volunteer scanner accounts</p>
+            </div>
+            <button onclick="openCreateVolunteerModal()" class="btn btn-primary">
+              <i class="bi bi-plus-lg"></i> Create Volunteer
+            </button>
+          </div>
+
+          <div class="card border border-slate-200 overflow-hidden">
+            <div class="table-responsive">
+              <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                  <tr>
+                    <th>Name</th>
+                    <th>Username</th>
+                    <th>Access Role</th>
+                  </tr>
+                </thead>
+                <tbody id="volunteers-table-body">
+                  <!-- Rendered programmatically -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+
+        <!-- ====================================================
+            PANEL: ATTENDANCE VERIFICATION
+            ==================================================== -->
+        <section id="panel-verification" class="admin-panel d-none">
+          <div class="d-flex align-items-center justify-content-between mb-4">
+            <div>
+              <h2 class="fw-bold text-gray-900 mb-0">Attendance Verification</h2>
+              <p class="text-muted small">Audit photo scans manually</p>
+            </div>
+            <button onclick="loadVerificationQueue()" class="btn btn-light border btn-sm py-2 px-3">
+              <i class="bi bi-arrow-clockwise"></i> Refresh List
+            </button>
+          </div>
+
+          <div class="row">
+            
+            <!-- Left Queue list -->
+            <div class="col-lg-4 mb-4">
+              <div class="card border border-slate-200 bg-white">
+                <div class="card-header bg-light border-bottom">
+                  <h3 class="fs-6 font-bold mb-0">Verification Queue (<span id="queue-count">0</span>)</h3>
+                </div>
+                <div class="list-group list-group-flush overflow-auto" id="verification-list" style="max-height: 520px;">
+                  <!-- Rendered dynamically -->
+                </div>
+              </div>
+            </div>
+
+            <!-- Right split-view workspace console -->
+            <div class="col-lg-8">
+              <div id="verification-workspace" class="card border border-slate-200 bg-white p-4 d-none">
+                
+                <h3 class="fs-5 font-bold mb-3 border-bottom pb-2">Verification Workspace</h3>
+                
+                <div class="row mt-4">
+                  <!-- Left Details -->
+                  <div class="col-md-5 mb-4">
+                    <div class="p-3 bg-light rounded border">
+                      <span class="text-xs text-muted font-bold uppercase tracking-wider block mb-2">Student Profile</span>
+                      <div class="mb-3">
+                        <label class="small text-muted font-medium block">Name</label>
+                        <p id="work-student-name" class="fw-bold mb-0">-</p>
+                      </div>
+                      <div class="mb-3">
+                        <label class="small text-muted font-medium block">Registration Number</label>
+                        <p id="work-student-reg" class="fw-bold mb-0">-</p>
+                      </div>
+                      <div class="mb-3">
+                        <label class="small text-muted font-medium block">Department</label>
+                        <p id="work-student-dept" class="fw-semibold mb-0">-</p>
+                      </div>
+                      <div class="border-top pt-2.5 mt-3">
+                        <label class="small text-muted font-medium block">Event & Day</label>
+                        <p id="work-student-scope" class="fw-semibold mb-0">-</p>
+                      </div>
+                      <div class="mt-2">
+                        <label class="small text-muted font-medium block">Scanned By (Volunteer)</label>
+                        <p id="work-scanned-by" class="fw-semibold mb-0 text-info">-</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Right Side-by-side Image View -->
+                  <div class="col-md-7 mb-4">
+                    <span class="text-xs text-muted font-bold uppercase tracking-wider block mb-2">Audit Photos</span>
+                    <div class="row row-cols-2 g-2">
+                      <div class="col">
+                        <div class="small text-muted mb-1 text-center font-semibold">Face Photo</div>
+                        <div class="camera-viewport border">
+                          <img id="work-photo-face" src="" class="w-100 h-100 object-fit-cover verification-zoom" alt="Face" onclick="window.open(this.src)">
+                        </div>
+                      </div>
+                      <div class="col">
+                        <div class="small text-muted mb-1 text-center font-semibold">ID Card Photo</div>
+                        <div class="camera-viewport border">
+                          <img id="work-photo-id" src="" class="w-100 h-100 object-fit-cover verification-zoom" alt="ID Card" onclick="window.open(this.src)">
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="alert alert-info small leading-relaxed mb-4">
+                  <b>Verification Audit Checklist:</b> Compare name and registration number on the physical ID card, confirm registration number spelling, check card print quality, and compare the live face photo against the card print.
+                </div>
+
+                <div class="mb-4">
+                  <label for="work-remarks" class="form-label font-bold text-sm">Remarks / Decline Reason</label>
+                  <textarea id="work-remarks" class="form-control" rows="2" placeholder="Write audit review notes here..."></textarea>
+                </div>
+
+                <div class="d-flex justify-content-end gap-3 border-top pt-3">
+                  <button onclick="submitAuditVerification('Rejected')" class="btn btn-danger px-4">
+                    <i class="bi bi-x-circle"></i> Reject
+                  </button>
+                  <button onclick="submitAuditVerification('Verified')" class="btn btn-success px-4">
+                    <i class="bi bi-check-circle"></i> Verify
+                  </button>
+                </div>
+
+              </div>
+              
+              <div id="verification-workspace-empty" class="card border border-slate-200 border-dashed p-5 text-center text-muted">
+                <i class="bi bi-file-earmark-check fs-2 d-block mb-2"></i>
+                Select a pending record from the queue to start manual verification
+              </div>
+            </div>
+
+          </div>
+        </section>
+
+
+        <!-- ====================================================
+            PANEL: REPORTS & EXCEL MATRIX
+            ==================================================== -->
+        <section id="panel-reports" class="admin-panel d-none">
+          <div class="d-flex flex-column gap-3 flex-md-row align-items-md-center justify-content-between mb-4">
+            <div>
+              <h2 class="fw-bold text-gray-900 mb-0">Reports Panel</h2>
+              <p class="text-muted small">View attendance matrices and export Excel logs</p>
+            </div>
+            
+            <div class="d-flex flex-wrap items-center gap-2">
+              <select id="reports-event-select" onchange="loadReportsData()" class="form-select border border-slate-200" style="max-width: 220px;">
+                <option value="">Select Event...</option>
+              </select>
+              <button onclick="exportReportsToExcel()" class="btn btn-success">
+                <i class="bi bi-file-earmark-excel"></i> Export to Excel
+              </button>
+            </div>
+          </div>
+
+          <div class="card border border-slate-200 bg-white p-4 mb-4">
+            <div class="row text-center">
+              <div class="col-6 col-md-3 border-end">
+                <span class="text-xs font-semibold text-muted uppercase tracking-wider block">Participants</span>
+                <span id="rep-total" class="fs-3 font-bold text-dark block mt-1">0</span>
+              </div>
+              <div class="col-6 col-md-3 border-end">
+                <span class="text-xs font-semibold text-success uppercase tracking-wider block">Verified</span>
+                <span id="rep-verified" class="fs-3 font-bold text-success block mt-1">0</span>
+              </div>
+              <div class="col-6 col-md-3 border-end">
+                <span class="text-xs font-semibold text-warning uppercase tracking-wider block">Pending</span>
+                <span id="rep-pending" class="fs-3 font-bold text-warning block mt-1">0</span>
+              </div>
+              <div class="col-6 col-md-3">
+                <span class="text-xs font-semibold text-danger uppercase tracking-wider block">Rejected</span>
+                <span id="rep-rejected" class="fs-3 font-bold text-danger block mt-1">0</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="card border border-slate-200 overflow-hidden">
+            <div class="card-header bg-light border-bottom px-4 py-3">
+              <h3 class="fs-6 font-bold mb-0 text-gray-800">Detailed Student Check-in Matrix</h3>
+            </div>
+            <div class="table-responsive">
+              <table id="reports-matrix-table" class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                  <tr id="reports-matrix-header-row">
+                    <th>Reg Number</th>
+                    <th>Student Name</th>
+                    <th>Department</th>
+                    <!-- Dynamic session headers will go here -->
+                  </tr>
+                </thead>
+                <tbody id="reports-table-body">
+                  <!-- Rendered programmatically -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+
+        <!-- ====================================================
+            PANEL: SETTINGS & PASSWORD RESET
+            ==================================================== -->
+        <section id="panel-settings" class="admin-panel d-none">
+          <div>
+            <h2 class="fw-bold text-gray-900 mb-0">Account Settings</h2>
+            <p class="text-muted small">Manage administrative security</p>
+          </div>
+
+          <div class="row mt-4">
+            
+            <!-- Left profile details -->
+            <div class="col-md-4 mb-4">
+              <div class="card border border-slate-200 text-center p-4">
+                <div class="mx-auto rounded-circle bg-light text-primary d-flex align-items-center justify-content-center mb-3" style="width: 64px; height: 64px; background-color: var(--bg-slate) !important;">
+                  <i class="bi bi-shield-lock fs-2 text-primary"></i>
+                </div>
+                <h3 id="settings-name" class="fs-5 font-bold mb-1">Attenza Admin</h3>
+                <span class="badge bg-secondary font-semibold uppercase px-2.5 py-0.5 text-xs rounded-full inline-block mx-auto">Admin Role</span>
+                
+                <div class="text-start mt-4 border-top pt-4 space-y-3">
+                  <div>
+                    <label class="small text-muted font-bold uppercase tracking-wider block">Username</label>
+                    <span id="settings-email" class="small fw-semibold text-slate-700">admin</span>
+                  </div>
+                  <div>
+                    <label class="small text-muted font-bold uppercase tracking-wider block">Access Level</label>
+                    <span class="small fw-semibold text-slate-700">Full System Control</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Right Reset Password form -->
+            <div class="col-md-8">
+              <div class="card border border-slate-200 p-4">
+                <h3 class="fs-5 font-bold mb-3 border-bottom pb-2">Change Account Password</h3>
+                
+                <form id="change-pass-form">
+                  <div class="mb-3">
+                    <label for="old-pass" class="form-label font-bold text-sm">Current Password</label>
+                    <input type="password" id="old-pass" class="form-control" placeholder="Enter current password" required>
+                  </div>
+                  <div class="mb-3">
+                    <label for="new-pass" class="form-label font-bold text-sm">New Password</label>
+                    <input type="password" id="new-pass" class="form-control" placeholder="Minimum 6 characters" required>
+                  </div>
+                  <div class="mb-3">
+                    <label for="confirm-pass" class="form-label font-bold text-sm">Confirm New Password</label>
+                    <input type="password" id="confirm-pass" class="form-control" placeholder="Retype new password" required>
+                  </div>
+                  <button type="submit" id="pass-submit-btn" class="btn btn-primary mt-3">Update Password</button>
+                </form>
+              </div>
+            </div>
+
+          </div>
+        </section>
+
+        <!-- ====================================================
+            PANEL: EMERGENCY MANUAL ATTENDANCE
+            ==================================================== -->
+        <section id="panel-emergency" class="admin-panel d-none">
+          <div class="d-flex align-items-center justify-content-between mb-4">
+            <div>
+              <h2 class="fw-bold text-gray-900 mb-0"><i class="bi bi-exclamation-triangle-fill text-warning me-2"></i>Emergency Manual Attendance</h2>
+              <p class="text-muted small">Use only when normal volunteer attendance process cannot be completed</p>
+            </div>
+          </div>
+
+          <!-- Warning Banner -->
+          <div class="alert alert-warning d-flex align-items-start gap-3 mb-4 border-0 shadow-sm" style="background: linear-gradient(135deg, #fff3cd 0%, #ffeeba 100%);">
+            <i class="bi bi-shield-exclamation fs-3 text-warning"></i>
+            <div>
+              <h6 class="fw-bold mb-1">Admin-Only Emergency Feature</h6>
+              <p class="mb-0 small">This feature bypasses the normal QR scan + photo verification workflow. Use only for: device failure, camera issues, QR scanner failure, photo upload failure, network problems, or other technical emergencies. All entries are audit-logged.</p>
+            </div>
+          </div>
+
+          <div class="row">
+            <!-- LEFT: Selection Form -->
+            <div class="col-lg-5 mb-4">
+              <div class="card border border-slate-200 p-4">
+                <h5 class="fw-bold mb-3 border-bottom pb-2"><i class="bi bi-sliders me-2"></i>Attendance Details</h5>
+
+                <!-- Step 1: Event -->
+                <div class="mb-3">
+                  <label class="form-label fw-bold small text-uppercase text-muted">1. Select Event</label>
+                  <select id="ema-event-select" class="form-select" onchange="onEmaEventChange()">
+                    <option value="">-- Choose Event --</option>
+                  </select>
+                </div>
+
+                <!-- Step 2: Session -->
+                <div class="mb-3">
+                  <label class="form-label fw-bold small text-uppercase text-muted">2. Select Session</label>
+                  <select id="ema-session-select" class="form-select" disabled>
+                    <option value="">-- Choose Session --</option>
+                  </select>
+                </div>
+
+                <!-- Step 3: Search Student -->
+                <div class="mb-3">
+                  <label class="form-label fw-bold small text-uppercase text-muted">3. Search Student</label>
+                  <div class="input-group">
+                    <input type="text" id="ema-student-search" class="form-control" placeholder="Registration No. or Name..." autocomplete="off">
+                    <button class="btn btn-primary" onclick="searchStudentForEma()" id="ema-search-btn">
+                      <i class="bi bi-search"></i> Search
+                    </button>
+                  </div>
+                  <!-- Search Results Dropdown -->
+                  <div id="ema-search-results" class="list-group mt-1 shadow-sm" style="max-height: 200px; overflow-y: auto; display: none;"></div>
+                </div>
+
+                <!-- Step 4: Reason -->
+                <div class="mb-3">
+                  <label class="form-label fw-bold small text-uppercase text-muted">4. Reason for Manual Entry</label>
+                  <select id="ema-reason-select" class="form-select" onchange="toggleEmaOtherReason()">
+                    <option value="">-- Select Reason --</option>
+                    <option value="Camera failure">Camera failure</option>
+                    <option value="QR scan failed">QR scan failed</option>
+                    <option value="Photo upload failed">Photo upload failed</option>
+                    <option value="Network issue">Network issue</option>
+                    <option value="Volunteer device failure">Volunteer device failure</option>
+                    <option value="Apps Script error">Apps Script error</option>
+                    <option value="Emergency">Emergency</option>
+                    <option value="Other">Other (specify below)</option>
+                  </select>
+                  <textarea id="ema-other-reason" class="form-control mt-2 d-none" rows="2" placeholder="Enter specific reason..."></textarea>
+                </div>
+              </div>
+            </div>
+
+            <!-- RIGHT: Student Details & Confirmation -->
+            <div class="col-lg-7 mb-4">
+              <!-- Student Preview Card -->
+              <div id="ema-student-card" class="card border border-slate-200 p-4 d-none">
+                <h5 class="fw-bold mb-3 border-bottom pb-2"><i class="bi bi-person-badge me-2"></i>Student Details</h5>
+                <div class="d-flex align-items-center gap-3 mb-3">
+                  <div class="rounded-circle bg-primary bg-opacity-10 text-primary d-flex align-items-center justify-content-center" style="width: 56px; height: 56px; min-width: 56px;">
+                    <i class="bi bi-person-fill fs-3"></i>
+                  </div>
+                  <div>
+                    <h5 id="ema-student-name" class="fw-bold mb-0">--</h5>
+                    <span id="ema-student-reg" class="text-muted small">Reg: --</span>
+                  </div>
+                </div>
+                <div class="row g-3 mb-4">
+                  <div class="col-6">
+                    <div class="bg-light rounded p-3">
+                      <small class="text-muted fw-bold text-uppercase d-block">Department</small>
+                      <span id="ema-student-dept" class="fw-semibold">--</span>
+                    </div>
+                  </div>
+                  <div class="col-6">
+                    <div class="bg-light rounded p-3">
+                      <small class="text-muted fw-bold text-uppercase d-block">Email</small>
+                      <span id="ema-student-email" class="fw-semibold">--</span>
+                    </div>
+                  </div>
+                  <div class="col-6">
+                    <div class="bg-light rounded p-3">
+                      <small class="text-muted fw-bold text-uppercase d-block">Event</small>
+                      <span id="ema-detail-event" class="fw-semibold">--</span>
+                    </div>
+                  </div>
+                  <div class="col-6">
+                    <div class="bg-light rounded p-3">
+                      <small class="text-muted fw-bold text-uppercase d-block">Session</small>
+                      <span id="ema-detail-session" class="fw-semibold">--</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Confirmation button -->
+                <div id="ema-action-area">
+                  <button id="ema-mark-btn" class="btn btn-warning btn-lg w-100 fw-bold" onclick="submitEmergencyAttendance()">
+                    <i class="bi bi-check-circle-fill me-2"></i>Mark Present (Manual)
+                  </button>
+                </div>
+
+                <!-- Success / Duplicate messages -->
+                <div id="ema-result-message" class="mt-3 d-none"></div>
+              </div>
+
+              <!-- Empty state -->
+              <div id="ema-empty-state" class="card border border-slate-200 p-5 text-center">
+                <i class="bi bi-person-plus-fill fs-1 text-muted mb-3"></i>
+                <h5 class="text-muted fw-bold">No Student Selected</h5>
+                <p class="text-muted small">Select an event, session, and search for a student to mark manual attendance.</p>
+              </div>
+
+              <!-- Recent Manual Entries Log -->
+              <div class="card border border-slate-200 p-4 mt-4">
+                <h5 class="fw-bold mb-3 border-bottom pb-2"><i class="bi bi-clock-history me-2"></i>Recent Manual Entries (This Session)</h5>
+                <div id="ema-recent-log" class="small">
+                  <p class="text-muted mb-0">No manual entries yet.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+      </main>
+
+    </div>
+  </div>
+
+  <!-- QR Code printing helper canvas container -->
+  <div id="hidden-qr-element" class="d-none"></div>
+
+  <!-- ====================================================
+      MODALS DIALOGS
+      ==================================================== -->
+  
+  <!-- Modal: View QR Code -->
+  <div id="student-qr-modal" class="modal fade" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title font-bold">Student QR Credentials</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body text-center">
+          <h4 id="qr-modal-name" class="fw-bold mb-1">Student Name</h4>
+          <p id="qr-modal-reg" class="text-muted small">Reg No: 2026CS101</p>
+          <div id="qr-canvas-holder" class="my-4 d-inline-block p-3 border border-dark rounded bg-white shadow-sm"></div>
+          <p class="text-muted small px-3">Unique security token. Does not contain registration number.</p>
+        </div>
+        <div class="modal-footer flex-column">
+          <button onclick="printStudentQRCode()" class="btn btn-primary w-100">
+            <i class="bi bi-printer"></i> Print QR Code
+          </button>
+          <button class="btn btn-light w-100 mt-2" data-bs-dismiss="modal">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Create Event -->
+  <div id="create-event-modal" class="modal fade" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content p-2">
+        <div class="modal-header">
+          <h5 class="modal-title font-bold">Create New Event</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <form id="create-event-form" onsubmit="submitNewEvent(event)">
+          <div class="modal-body space-y-3">
+            <div class="mb-3">
+              <label for="event-name-input" class="form-label font-bold text-sm">Event Name</label>
+              <input type="text" id="event-name-input" class="form-control" placeholder="e.g. Annual Tech Summit 2026" required>
+            </div>
+            <div class="row">
+              <div class="col-sm-6 mb-3">
+                <label for="event-date-input" class="form-label font-bold text-sm">Event Date</label>
+                <input type="date" id="event-date-input" class="form-control" required>
+              </div>
+              <div class="col-sm-6 mb-3">
+                <label for="event-sessions-input" class="form-label font-bold text-sm">Attendance Sessions</label>
+                <input type="number" id="event-sessions-input" class="form-control" min="1" max="20" placeholder="e.g. 4" required>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" id="event-submit-btn" class="btn btn-primary">Create Event</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Create Volunteer -->
+  <div id="create-volunteer-modal" class="modal fade" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content p-2">
+        <div class="modal-header">
+          <h5 class="modal-title font-bold">Register Volunteer Scanner</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <form id="create-volunteer-form" onsubmit="submitNewVolunteer(event)">
+          <div class="modal-body space-y-3">
+            <div class="mb-3">
+              <label for="vol-name-input" class="form-label font-bold text-sm">Full Name</label>
+              <input type="text" id="vol-name-input" class="form-control" placeholder="e.g. John Doe" required>
+            </div>
+            <div class="mb-3">
+              <label for="vol-email-input" class="form-label font-bold text-sm">Username</label>
+              <input type="text" id="vol-email-input" class="form-control" placeholder="e.g. volunteer1" required>
+            </div>
+            <div class="mb-3">
+              <label for="vol-pass-input" class="form-label font-bold text-sm">Login Password</label>
+              <input type="password" id="vol-pass-input" class="form-control" placeholder="Minimum 6 characters" required>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" id="vol-submit-btn" class="btn btn-primary">Register Volunteer</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Manage Sessions -->
+  <div id="manage-sessions-modal" class="modal fade" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content p-2">
+        <div class="modal-header">
+          <h5 class="modal-title font-bold" id="sessions-modal-title">Manage Sessions</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div id="sessions-modal-list" class="d-flex flex-column gap-3">
+            <!-- Populated dynamically -->
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-light" data-bs-dismiss="modal">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  
+  <!-- Pass GAS Web App URL to Frontend JS -->
+  <script>
+    var WEB_APP_URL = "<?!= ScriptApp.getService().getUrl(); ?>";
+  </script>
+
+  <!-- Common JavaScript Controller -->
+  <script src="script.js"></script>
+  <?!= include('script'); ?>
+
+  <script>
+    // Global data stores
+    var globalStudents = [];
+    var globalVolunteers = [];
+    var globalEvents = [];
+    var globalPendingRecords = [];
+    var globalSelectedRecord = null;
+    var globalReportsStats = {};
+    var globalReportsAttendance = [];
+    var excelParsedRows = [];
+    
+    // Bootstrap Modal instances
+    var qrModalInstance = null;
+    var eventModalInstance = null;
+    var volunteerModalInstance = null;
+    var sessionsModalInstance = null;
+    
+    var activeStudent = null;
+
+    document.addEventListener("DOMContentLoaded", function() {
+      // 1. Enforce admin role lock
+      enforceRoleSecurity(['admin'], 'admin');
+      
+      // 2. Setup user display
+      var session = getActiveSession();
+      if (session) {
+        document.getElementById('admin-display-name').innerText = session.name || "Attenza Admin";
+        document.getElementById('admin-display-email').innerText = session.username || "admin";
+        document.getElementById('settings-name').innerText = session.name || "Attenza Admin";
+        document.getElementById('settings-email').innerText = session.username || "admin";
+      }
+
+      // Initialize modals
+      qrModalInstance = new bootstrap.Modal(document.getElementById('student-qr-modal'));
+      eventModalInstance = new bootstrap.Modal(document.getElementById('create-event-modal'));
+      volunteerModalInstance = new bootstrap.Modal(document.getElementById('create-volunteer-modal'));
+      sessionsModalInstance = new bootstrap.Modal(document.getElementById('manage-sessions-modal'));
+      
+      // Start on Dashboard overview
+      switchPanel('dashboard');
+    });
+
+    /**
+     * Dashboard SPA Panels toggles
+     */
+    function switchPanel(panelId) {
+      // Hide all panels
+      var panels = document.getElementsByClassName("admin-panel");
+      for (var i = 0; i < panels.length; i++) {
+        panels[i].classList.add("d-none");
+      }
+      
+      // Deactivate all sidebar items
+      var navItems = document.querySelectorAll(".sidebar-item");
+      navItems.forEach(item => item.classList.remove("active"));
+
+      // Show requested panel
+      var targetPanel = document.getElementById("panel-" + panelId);
+      if (targetPanel) {
+        targetPanel.classList.remove("d-none");
+      }
+      
+      var activeNav = document.getElementById("nav-" + panelId);
+      if (activeNav) {
+        activeNav.classList.add("active");
+      }
+      
+      // Close mobile drawer on item click
+      document.getElementById('sidebar').classList.remove('open');
+
+      // Fetch dynamic panel data
+      if (panelId === 'dashboard') loadEventsDropdowns();
+      else if (panelId === 'events') fetchEventsList();
+      else if (panelId === 'students') fetchStudentsList();
+      else if (panelId === 'volunteers') fetchVolunteersList();
+      else if (panelId === 'verification') loadVerificationQueue();
+      else if (panelId === 'reports') loadReportsDropdowns();
+      else if (panelId === 'emergency') loadEmergencyPanel();
+    }
+
+    // ==========================================
+    // BACKEND INTEGRATION RPC CALLS
+    // ==========================================
+
+    /* 1. EVENTS MANAGEMENT */
+    function fetchEventsList() {
+      var tbody = document.getElementById("events-table-body");
+      tbody.innerHTML = `<tr><td colspan="4" class="text-center py-4"><span class="spinner-border spinner-border-sm text-primary"></span> Loading events...</td></tr>`;
+      
+      execApi(
+        'getAdminEvents',
+        {},
+        function(response) {
+          if (response.success) {
+            globalEvents = response.events;
+            renderEventsTable();
+          } else {
+            showStatusToast("Failed to load events: " + response.message, "danger");
+          }
+        },
+        function(err) {
+          showStatusToast("Server error: " + err.message, "danger");
+        }
+      );
+    }
+
+    function renderEventsTable() {
+      var tbody = document.getElementById("events-table-body");
+      if (globalEvents.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="4" class="text-center text-muted py-4"><i class="bi bi-calendar-x d-block mb-1 fs-3"></i> No events found</td></tr>`;
+        return;
+      }
+      
+      var html = "";
+      globalEvents.forEach(function(ev) {
+        var displayDate = ev.eventDate ? ev.eventDate.split('T')[0] : '-';
+        html += `
+          <tr>
+            <td><div class="fw-bold">${ev.eventName}</div></td>
+            <td class="text-muted">${displayDate}</td>
+            <td><span class="badge bg-light text-primary border border-primary px-2.5 py-1 fw-semibold">${ev.sessionsCount || '1'} ${ev.sessionsCount == 1 ? 'Session' : 'Sessions'}</span></td>
+            <td class="text-end">
+              <button onclick="openManageSessionsModal('${ev.eventId || ev.eventid}', '${ev.eventName.replace(/'/g, "\\'")}')" class="btn btn-outline-primary btn-sm py-1.5 px-3 me-2">
+                <i class="bi bi-sliders"></i> Sessions
+              </button>
+              <button onclick="confirmDeleteEvent('${ev.eventId || ev.eventid}', '${ev.eventName.replace(/'/g, "\\'")}')" class="btn btn-outline-danger btn-sm py-1.5 px-3">
+                <i class="bi bi-trash"></i> Delete
+              </button>
+            </td>
+          </tr>
+        `;
+      });
+      tbody.innerHTML = html;
+    }
+
+    var currentManageEventId = null;
+    function openManageSessionsModal(eventId, eventName) {
+      currentManageEventId = eventId;
+      document.getElementById("sessions-modal-title").innerText = "Manage Sessions - " + eventName;
+      
+      var listDiv = document.getElementById("sessions-modal-list");
+      listDiv.innerHTML = `<div class="text-center py-3"><span class="spinner-border spinner-border-sm text-primary"></span> Loading sessions...</div>`;
+      
+      sessionsModalInstance.show();
+      loadManageSessionsList();
+    }
+
+    function loadManageSessionsList() {
+      if (!currentManageEventId) return;
+      var listDiv = document.getElementById("sessions-modal-list");
+      
+      execApi(
+        'getEventSessions',
+        { eventId: currentManageEventId },
+        function(response) {
+          if (response.success) {
+            var html = "";
+            if (response.sessions.length === 0) {
+              listDiv.innerHTML = `<div class="text-center text-muted py-3">No sessions found.</div>`;
+              return;
+            }
+            
+            response.sessions.forEach(function(sess) {
+              var badgeClass = "bg-secondary";
+              if (sess.status === "Open") badgeClass = "bg-success";
+              else if (sess.status === "Closed") badgeClass = "bg-danger";
+              
+              var actionBtn = "";
+              if (sess.status === "Locked" || sess.status === "Closed") {
+                actionBtn = `<button onclick="updateSessionState('${sess.sessionName}', 'Open')" class="btn btn-primary btn-sm px-3 font-semibold"><i class="bi bi-unlock-fill me-1"></i> Open Session</button>`;
+              } else if (sess.status === "Open") {
+                actionBtn = `<button onclick="updateSessionState('${sess.sessionName}', 'Closed')" class="btn btn-danger btn-sm px-3 font-semibold"><i class="bi bi-lock-fill me-1"></i> Close Session</button>`;
+              }
+              
+              html += `
+                <div class="d-flex align-items-center justify-content-between p-3 border rounded bg-white">
+                  <div>
+                    <h6 class="fw-bold mb-1">${sess.sessionName}</h6>
+                    <span class="badge ${badgeClass}">${sess.status}</span>
+                  </div>
+                  <div>
+                    ${actionBtn}
+                  </div>
+                </div>
+              `;
+            });
+            listDiv.innerHTML = html;
+          } else {
+            listDiv.innerHTML = `<div class="alert alert-danger font-bold text-sm">${response.message}</div>`;
+          }
+        },
+        function(err) {
+          listDiv.innerHTML = `<div class="alert alert-danger font-bold text-sm">Error: ${err.message}</div>`;
+        }
+      );
+    }
+
+    function updateSessionState(sessionName, newState) {
+      if (!currentManageEventId) return;
+      
+      var listDiv = document.getElementById("sessions-modal-list");
+      listDiv.style.opacity = "0.5";
+      
+      execApi(
+        'setSessionStatus',
+        { eventId: currentManageEventId, sessionName: sessionName, newStatus: newState },
+        function(response) {
+          listDiv.style.opacity = "1";
+          if (response.success) {
+            showStatusToast(response.message, "success");
+            loadManageSessionsList();
+          } else {
+            showStatusToast(response.message, "danger");
+            loadManageSessionsList();
+          }
+        },
+        function(err) {
+          listDiv.style.opacity = "1";
+          showStatusToast("Server error: " + err.message, "danger");
+        }
+      );
+    }
+
+    function confirmDeleteEvent(eventId, eventName) {
+      if (confirm("Are you sure you want to delete event '" + eventName + "'? This will also delete all associated attendance records!")) {
+        execApi(
+          'deleteEvent',
+          { eventId: eventId },
+          function(response) {
+            if (response.success) {
+              showStatusToast(response.message, "success");
+              fetchEventsList();
+            } else {
+              showStatusToast(response.message, "danger");
+            }
+          },
+          function(err) {
+            showStatusToast("Server error: " + err.message, "danger");
+          }
+        );
+      }
+    }
+
+    function openCreateEventModal() {
+      document.getElementById("create-event-form").reset();
+      eventModalInstance.show();
+    }
+
+    function submitNewEvent(e) {
+      e.preventDefault();
+      var name = document.getElementById("event-name-input").value.trim();
+      var date = document.getElementById("event-date-input").value;
+      var sessions = document.getElementById("event-sessions-input").value;
+      var submitBtn = document.getElementById("event-submit-btn");
+
+      submitBtn.disabled = true;
+      submitBtn.innerText = "Creating...";
+
+      execApi(
+        'createEvent',
+        { eventName: name, eventDate: date, sessions: sessions },
+        function(response) {
+          submitBtn.disabled = false;
+          submitBtn.innerText = "Create Event";
+          if (response.success) {
+            eventModalInstance.hide();
+            showStatusToast(response.message, "success");
+            fetchEventsList();
+          } else {
+            showStatusToast(response.message, "danger");
+          }
+        },
+        function(err) {
+          submitBtn.disabled = false;
+          submitBtn.innerText = "Create Event";
+          showStatusToast("Failed: " + err.message, "danger");
+        }
+      );
+    }
+
+    /* 2. UPLOAD PARTICIPANTS (EXCEL) */
+    function handleExcelFileUpload(e) {
+      var file = e.target.files[0];
+      var label = document.getElementById("excel-file-label");
+      var importBtn = document.getElementById("import-btn");
+      var feedback = document.getElementById("upload-feedback");
+      
+      if (!file) return;
+      label.innerText = file.name;
+      importBtn.disabled = true;
+      feedback.innerHTML = `<span class="spinner-border spinner-border-sm text-primary"></span> Parsing excel sheets...`;
+      
+      var reader = new FileReader();
+      reader.onload = function(evt) {
+        try {
+          var data = evt.target.result;
+          var workbook = XLSX.read(data, { type: 'binary' });
+          var firstSheetName = workbook.SheetNames[0];
+          var worksheet = workbook.Sheets[firstSheetName];
+          
+          // Convert row arrays to JSON objects
+          var rows = XLSX.utils.sheet_to_json(worksheet);
+          
+          if (rows.length === 0) {
+            feedback.innerHTML = `<div class="alert alert-danger font-bold text-sm">Spreadsheet contains no rows.</div>`;
+            return;
+          }
+          
+          // Verify columns in first row (robust check)
+          var sample = rows[0];
+          var foundKeys = Object.keys(sample);
+          
+          var regKey = foundKeys.find(function(k) {
+            var n = k.toLowerCase().replace(/[^a-z0-9]/g, "");
+            return n.indexOf("registration") !== -1 || n.indexOf("regnum") !== -1 || n.indexOf("regno") !== -1 || n.indexOf("regnumber") !== -1;
+          });
+          
+          var nameKey = foundKeys.find(function(k) {
+            var n = k.toLowerCase().replace(/[^a-z0-9]/g, "");
+            return n === "name" || n.indexOf("studentname") !== -1 || n.indexOf("fullname") !== -1;
+          });
+          
+          var deptKey = foundKeys.find(function(k) {
+            var n = k.toLowerCase().replace(/[^a-z0-9]/g, "");
+            return n.indexOf("department") !== -1 || n === "dept" || n === "branch";
+          });
+          
+          if (!regKey || !nameKey || !deptKey) {
+            feedback.innerHTML = `<div class="alert alert-danger font-bold text-sm">Error: Required columns ("Registration Number", "Name", "Department") not found.</div>`;
+            return;
+          }
+          
+          // Map fuzzy keys to standard keys expected by backend Admin.gs
+          excelParsedRows = rows.map(function(r) {
+            var emailKey = foundKeys.find(function(k) { return k.toLowerCase().indexOf("email") !== -1; });
+            var pwdKey = foundKeys.find(function(k) { var n = k.toLowerCase(); return n === "passwords" || n === "password" || n === "pwd"; });
+            return {
+              "Registration Number": r[regKey],
+              "Name": r[nameKey],
+              "Department": r[deptKey],
+              "Email": emailKey ? r[emailKey] : "",
+              "Passwords": pwdKey ? r[pwdKey] : ""
+            };
+          });
+          importBtn.disabled = false;
+          feedback.innerHTML = `
+            <div class="alert alert-success font-bold text-sm mb-0">
+              <i class="bi bi-check-circle"></i> Successfully parsed spreadsheet. Found ${rows.length} valid participant rows. Click import to finalize.
+            </div>
+          `;
+        } catch(err) {
+          feedback.innerHTML = `<div class="alert alert-danger font-bold text-sm">Parsing failed: ${err.message}</div>`;
+        }
+      };
+      reader.readAsBinaryString(file);
+    }
+
+    function submitImportedRows() {
+      if (excelParsedRows.length === 0) return;
+      
+      var importBtn = document.getElementById("import-btn");
+      var feedback = document.getElementById("upload-feedback");
+      
+      importBtn.disabled = true;
+      feedback.innerHTML = `<span class="spinner-border spinner-border-sm text-primary"></span> Importing records into Sheets database...`;
+      
+      execApi(
+        'importParticipants',
+        { rows: excelParsedRows },
+        function(response) {
+          if (response.success) {
+            feedback.innerHTML = `<div class="alert alert-success font-bold text-sm mb-0"><i class="bi bi-check-circle-fill"></i> ${response.message}</div>`;
+            document.getElementById("excel-file-input").value = "";
+            document.getElementById("excel-file-label").innerText = "Click to upload or drag & drop Excel file";
+            excelParsedRows = [];
+          } else {
+            importBtn.disabled = false;
+            feedback.innerHTML = `<div class="alert alert-danger font-bold text-sm">${response.message}</div>`;
+          }
+        },
+        function(err) {
+          importBtn.disabled = false;
+          feedback.innerHTML = `<div class="alert alert-danger font-bold text-sm">Server connection lost: ${err.message}</div>`;
+        }
+      );
+    }
+
+    /* 3. STUDENTS LIST */
+    function fetchStudentsList() {
+      var tbody = document.getElementById("students-table-body");
+      tbody.innerHTML = `<tr><td colspan="5" class="text-center py-4"><span class="spinner-border spinner-border-sm text-primary"></span> Querying students...</td></tr>`;
+      
+      execApi(
+        'getStudentsList',
+        {},
+        function(response) {
+          if (response.success) {
+            globalStudents = response.students;
+            renderStudentsTable();
+          } else {
+            showStatusToast("Failed to load students: " + response.message, "danger");
+          }
+        },
+        function(err) {
+          showStatusToast("Server error: " + err.message, "danger");
+        }
+      );
+    }
+
+    function renderStudentsTable() {
+      var tbody = document.getElementById("students-table-body");
+      var query = document.getElementById("search-students").value.trim().toLowerCase();
+      
+      var filtered = globalStudents.filter(function(st) {
+        return (
+          st.name.toLowerCase().indexOf(query) !== -1 ||
+          st.registrationNumber.toLowerCase().indexOf(query) !== -1 ||
+          st.department.toLowerCase().indexOf(query) !== -1
+        );
+      });
+      
+      if (globalStudents.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted py-4"><i class="bi bi-people d-block mb-1 fs-3"></i> No participants found.</td></tr>`;
+        return;
+      }
+      
+      if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted py-4"><i class="bi bi-search d-block mb-1 fs-3"></i> No matching search results found.</td></tr>`;
+        return;
+      }
+      
+      var html = "";
+      filtered.forEach(function(st) {
+        html += `
+          <tr>
+            <td class="fw-bold">${st.registrationNumber}</td>
+            <td class="fw-semibold">${st.name}</td>
+            <td class="text-muted">${st.department}</td>
+            <td class="text-muted">${st.email || '-'}</td>
+            <td class="text-end">
+              <button onclick="openQRModal('${st.studentId}')" class="btn btn-outline-primary btn-sm py-1.5 px-3 me-2">
+                <i class="bi bi-qr-code"></i> View QR
+              </button>
+              <button onclick="confirmDeleteStudent('${st.studentId}', '${st.name.replace(/'/g, "\\'")}')" class="btn btn-outline-danger btn-sm py-1.5 px-3">
+                <i class="bi bi-trash"></i> Delete
+              </button>
+            </td>
+          </tr>
+        `;
+      });
+      tbody.innerHTML = html;
+    }
+
+    function confirmDeleteStudent(studentId, studentName) {
+      if (confirm("Are you sure you want to delete student '" + studentName + "'? This will also delete all of their associated attendance records!")) {
+        execApi(
+          'deleteStudent',
+          { studentId: studentId },
+          function(response) {
+            if (response.success) {
+              showStatusToast(response.message, "success");
+              fetchStudentsList();
+            } else {
+              showStatusToast(response.message, "danger");
+            }
+          },
+          function(err) {
+            showStatusToast("Server error: " + err.message, "danger");
+          }
+        );
+      }
+    }
+
+    function openQRModal(studentId) {
+      activeStudent = globalStudents.find(s => s.studentId === studentId);
+      if (!activeStudent) return;
+      
+      document.getElementById("qr-modal-name").innerText = activeStudent.name;
+      document.getElementById("qr-modal-reg").innerText = "Reg No: " + activeStudent.registrationNumber;
+      
+      var holder = document.getElementById("qr-canvas-holder");
+      holder.innerHTML = "";
+      
+      if (activeStudent.qrCodeURL) {
+        holder.innerHTML = `<img src="${formatDriveDirectLink(activeStudent.qrCodeURL)}" style="width: 180px; height: 180px; object-fit: contain;" />`;
+      } else {
+        // Fallback local draw
+        new QRCode(holder, {
+          text: activeStudent.qrToken,
+          width: 180,
+          height: 180,
+          correctLevel: QRCode.CorrectLevel.H
+        });
+      }
+      
+      qrModalInstance.show();
+    }
+
+    function printStudentQRCode() {
+      if (!activeStudent) return;
+      
+      if (activeStudent.qrCodeURL) {
+        triggerPrint(formatDriveDirectLink(activeStudent.qrCodeURL));
+      } else {
+        // Fallback local draw
+        var qrel = document.getElementById("hidden-qr-element");
+        qrel.innerHTML = "";
+        
+        new QRCode(qrel, {
+          text: activeStudent.qrToken,
+          width: 250,
+          height: 250,
+          correctLevel: QRCode.CorrectLevel.H
+        });
+        
+        // Allow slight drawing delay
+        setTimeout(function() {
+          var qrImg = qrel.getElementsByTagName("img")[0];
+          if (qrImg) triggerPrint(qrImg.src);
+        }, 250);
+      }
+    }
+    
+    function triggerPrint(src) {
+      var printHtml = `
+        <html>
+        <head>
+          <title>Print QR - ${activeStudent.name}</title>
+          <style>
+            body { font-family: sans-serif; text-align: center; padding: 40px; }
+            .print-card { border: 2px solid #000; display: inline-block; padding: 30px; border-radius: 12px; }
+            img { margin: 20px 0; width: 250px; height: 250px; }
+          </style>
+        </head>
+        <body>
+          <div class="print-card">
+            <h2>${activeStudent.name}</h2>
+            <p>Registration Number: <b>${activeStudent.registrationNumber}</b></p>
+            <p>Department: ${activeStudent.department}</p>
+            <img src="${src}" />
+            <p>Attenza Attendance security token</p>
+          </div>
+          <script>
+            window.onload = function() { window.print(); window.close(); }
+          <\/script>
+        </body>
+        </html>
+      `;
+      var printWin = window.open('', '', 'width=600,height=600');
+      printWin.document.open();
+      printWin.document.write(printHtml);
+      printWin.document.close();
+    }
+
+    /* 4. VOLUNTEERS DIRECTORY */
+    function fetchVolunteersList() {
+      var tbody = document.getElementById("volunteers-table-body");
+      tbody.innerHTML = `<tr><td colspan="3" class="text-center py-4"><span class="spinner-border spinner-border-sm text-primary"></span> Querying volunteers...</td></tr>`;
+      
+      execApi(
+        'getVolunteersList',
+        {},
+        function(response) {
+          if (response.success) {
+            globalVolunteers = response.volunteers;
+            renderVolunteersTable();
+          } else {
+            showStatusToast("Failed to load volunteers: " + response.message, "danger");
+          }
+        },
+        function(err) {
+          showStatusToast("Server error: " + err.message, "danger");
+        }
+      );
+    }
+
+    function renderVolunteersTable() {
+      var tbody = document.getElementById("volunteers-table-body");
+      if (globalVolunteers.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="3" class="text-center text-muted py-4"><i class="bi bi-shield-exclamation d-block mb-1 fs-3"></i> No volunteers created yet</td></tr>`;
+        return;
+      }
+      
+      var html = "";
+      globalVolunteers.forEach(function(vol) {
+        html += `
+          <tr>
+            <td><div class="fw-bold">${vol.name}</div></td>
+            <td class="text-muted">${vol.username || '-'}</td>
+            <td><span class="badge bg-amber-50 text-warning border border-warning px-2.5 py-1 fw-bold">Volunteer / Scanner</span></td>
+          </tr>
+        `;
+      });
+      tbody.innerHTML = html;
+    }
+
+    function openCreateVolunteerModal() {
+      document.getElementById("create-volunteer-form").reset();
+      volunteerModalInstance.show();
+    }
+
+    function submitNewVolunteer(e) {
+      e.preventDefault();
+      var name = document.getElementById("vol-name-input").value.trim();
+      var email = document.getElementById("vol-email-input").value.trim();
+      var password = document.getElementById("vol-pass-input").value.trim();
+      var submitBtn = document.getElementById("vol-submit-btn");
+
+      submitBtn.disabled = true;
+      submitBtn.innerText = "Registering...";
+
+      execApi(
+        'createVolunteer',
+        { name: name, username: email, password: password },
+        function(response) {
+          submitBtn.disabled = false;
+          submitBtn.innerText = "Register Volunteer";
+          if (response.success) {
+            volunteerModalInstance.hide();
+            showStatusToast(response.message, "success");
+            fetchVolunteersList();
+          } else {
+            showStatusToast(response.message, "danger");
+          }
+        },
+        function(err) {
+          submitBtn.disabled = false;
+          submitBtn.innerText = "Register Volunteer";
+          showStatusToast("Failed: " + err.message, "danger");
+        }
+      );
+    }
+
+    /* 5. ATTENDANCE MANUAL VERIFICATION */
+    function loadVerificationQueue() {
+      var queueContainer = document.getElementById("verification-list");
+      queueContainer.innerHTML = `<div class="text-center py-4"><span class="spinner-border spinner-border-sm text-primary"></span> Loading pending...</div>`;
+      
+      document.getElementById("verification-workspace").classList.add("d-none");
+      document.getElementById("verification-workspace-empty").classList.remove("d-none");
+      globalSelectedRecord = null;
+
+      execApi(
+        'getPendingVerifications',
+        {},
+        function(response) {
+          if (response.success) {
+            globalPendingRecords = response.records;
+            renderVerificationQueue();
+          } else {
+            showStatusToast("Failed queue sync: " + response.message, "danger");
+          }
+        },
+        function(err) {
+          showStatusToast("Connection lost: " + err.message, "danger");
+        }
+      );
+    }
+
+    function renderVerificationQueue() {
+      var queueContainer = document.getElementById("verification-list");
+      document.getElementById("queue-count").innerText = globalPendingRecords.length;
+      
+      if (globalPendingRecords.length === 0) {
+        queueContainer.innerHTML = `<div class="text-center text-muted py-5"><i class="bi bi-journal-check fs-2 block mb-1"></i> Clean queue. All verified!</div>`;
+        return;
+      }
+      
+      var html = "";
+      globalPendingRecords.forEach(function(rec) {
+        var activeClass = globalSelectedRecord?.attendanceId === rec.attendanceId ? "bg-primary bg-opacity-10 border-start border-4 border-primary" : "";
+        html += `
+          <button 
+            type="button" 
+            onclick="selectVerificationItem('${rec.attendanceId}')"
+            class="list-group-item list-group-item-action text-start p-3 ${activeClass}"
+          >
+            <div class="fw-bold truncate small mb-0.5">${rec.name}</div>
+            <div class="text-muted extra-small mb-1.5" style="font-size: 0.75rem;">Reg: ${rec.registrationNumber} • ${rec.department}</div>
+            <div class="d-flex align-items-center gap-1.5">
+              <span class="badge bg-secondary font-semibold p-1 small" style="font-size: 0.65rem;">${rec.eventName} - ${rec.session}</span>
+              <span class="badge bg-info font-semibold p-1 small" style="font-size: 0.65rem;">By: ${rec.volunteerName || 'Unknown'}</span>
+            </div>
+          </button>
+        `;
+      });
+      queueContainer.innerHTML = html;
+    }
+
+    function selectVerificationItem(attendanceId) {
+      globalSelectedRecord = globalPendingRecords.find(r => r.attendanceId === attendanceId);
+      if (!globalSelectedRecord) return;
+      
+      // Render active selection border
+      renderVerificationQueue();
+      
+      // Display details
+      document.getElementById("work-student-name").innerText = globalSelectedRecord.name;
+      document.getElementById("work-student-reg").innerText = globalSelectedRecord.registrationNumber;
+      document.getElementById("work-student-dept").innerText = globalSelectedRecord.department;
+      document.getElementById("work-student-scope").innerText = globalSelectedRecord.eventName + " - " + globalSelectedRecord.session;
+      document.getElementById("work-scanned-by").innerText = globalSelectedRecord.volunteerName || "Unknown";
+      
+      document.getElementById("work-photo-face").src = formatDriveDirectLink(globalSelectedRecord.facePhotoURL);
+      document.getElementById("work-photo-id").src = formatDriveDirectLink(globalSelectedRecord.idPhotoURL);
+      
+      document.getElementById("work-remarks").value = "";
+      
+      document.getElementById("verification-workspace-empty").classList.add("d-none");
+      document.getElementById("verification-workspace").classList.remove("d-none");
+    }
+
+    function submitAuditVerification(status) {
+      if (!globalSelectedRecord) return;
+      
+      var remarksVal = document.getElementById("work-remarks").value.trim();
+      var workDiv = document.getElementById("verification-workspace");
+      workDiv.style.opacity = "0.5";
+      
+      execApi(
+        'processVerification',
+        { attId: globalSelectedRecord.attendanceId, decision: status, rejectionReason: remarksVal },
+        function(response) {
+          workDiv.style.opacity = "1";
+          if (response.success) {
+            showStatusToast("Record successfully " + status, "success");
+            loadVerificationQueue();
+          } else {
+            showStatusToast("Failed: " + response.message, "danger");
+          }
+        },
+        function(err) {
+          workDiv.style.opacity = "1";
+          showStatusToast("Connection lost: " + err.message, "danger");
+        }
+      );
+    }
+
+    /* 6. REPORTS & EXCEL MATRIX */
+    function loadEventsDropdowns() {
+      execApi(
+        'getAdminEvents',
+        {},
+        function(response) {
+          if (response.success) {
+            globalEvents = response.events;
+            var dselect = document.getElementById("dash-event-select");
+            dselect.innerHTML = '<option value="">Select Event...</option>';
+            globalEvents.forEach(function(ev) {
+              var id = ev.eventId || ev.eventid || ev["event id"];
+              dselect.innerHTML += `<option value="${id}">${ev.eventName}</option>`;
+            });
+            
+            if (globalEvents.length > 0) {
+              var firstId = globalEvents[0].eventId || globalEvents[0].eventid || globalEvents[0]["event id"];
+              dselect.value = firstId;
+              loadDashboardStats();
+            }
+          }
+        }
+      );
+    }
+
+    function loadDashboardStats() {
+      var eventId = document.getElementById("dash-event-select").value;
+      if (!eventId) return;
+      
+      execApi(
+        'getReportStats',
+        { eventId: eventId },
+        function(response) {
+          if (response.success) {
+            var stats = response.stats;
+            document.getElementById("stat-total").innerText = stats.totalParticipants;
+            document.getElementById("stat-verified").innerText = stats.verified;
+            document.getElementById("stat-pending").innerText = stats.pending;
+            document.getElementById("stat-rejected").innerText = stats.rejected;
+            
+            // Build breakdown bars
+            var breakdownContainer = document.getElementById("dash-session-breakdown");
+            if (!breakdownContainer) breakdownContainer = document.getElementById("dash-day-breakdown");
+            breakdownContainer.innerHTML = "";
+            
+            var activeEvent = globalEvents.find(e => (e.eventId || e.eventid || e["event id"]) === eventId);
+            var sessionsCount = activeEvent ? parseInt(activeEvent.sessionsCount || activeEvent.sessionscount) : 1;
+            
+            for (var s = 1; s <= sessionsCount; s++) {
+              var sessionName = "Session " + s;
+              var count = (stats.sessionStats && stats.sessionStats[sessionName]) || 0;
+              var pct = stats.totalParticipants > 0 ? Math.round((count / stats.totalParticipants) * 100) : 0;
+              
+              breakdownContainer.innerHTML += `
+                <div class="col-md-4 mb-3">
+                  <div class="card border p-3 bg-white">
+                    <div class="d-flex justify-content-between mb-2">
+                      <span class="small font-bold text-muted">${sessionName} Present</span>
+                      <span class="badge bg-success bg-opacity-10 text-success small">${pct}%</span>
+                    </div>
+                    <div class="d-flex align-items-baseline gap-2 mb-3">
+                      <span class="fs-3 fw-bold">${count}</span>
+                      <span class="small text-muted">/ ${stats.totalParticipants} students</span>
+                    </div>
+                    <div class="progress" style="height: 6px;">
+                      <div class="progress-bar bg-primary" role="progressbar" style="width: ${pct}%"></div>
+                    </div>
+                  </div>
+                </div>
+              `;
+            }
+          }
+        }
+      );
+    }
+
+    function loadReportsDropdowns() {
+      var rselect = document.getElementById("reports-event-select");
+      rselect.innerHTML = '<option value="">Select Event...</option>';
+      globalEvents.forEach(function(ev) {
+        var id = ev.eventId || ev.eventid || ev["event id"];
+        rselect.innerHTML += `<option value="${id}">${ev.eventName}</option>`;
+      });
+      
+      if (globalEvents.length > 0) {
+        var firstId = globalEvents[0].eventId || globalEvents[0].eventid || globalEvents[0]["event id"];
+        rselect.value = firstId;
+        loadReportsData();
+      }
+    }
+
+    function loadReportsData() {
+      var eventId = document.getElementById("reports-event-select").value;
+      if (!eventId) return;
+      
+      var tbody = document.getElementById("reports-table-body");
+      tbody.innerHTML = `<tr><td colspan="6" class="text-center py-4"><span class="spinner-border spinner-border-sm text-primary"></span> Joining records...</td></tr>`;
+
+      execApi(
+        'getReportsMatrix',
+        { eventId: eventId },
+        function(response) {
+          if (response.success) {
+            globalReportsAttendance = response.records;
+            
+            execApi(
+              'getStudentsList',
+              {},
+              function(stResponse) {
+                if (stResponse.success) {
+                  globalStudents = stResponse.students;
+                  
+                  execApi(
+                    'getReportStats',
+                    { eventId: eventId },
+                    function(statsResponse) {
+                      if (statsResponse.success) {
+                        var stats = statsResponse.stats;
+                        document.getElementById("rep-total").innerText = stats.totalParticipants;
+                        document.getElementById("rep-verified").innerText = stats.verified;
+                        document.getElementById("rep-pending").innerText = stats.pending;
+                        document.getElementById("rep-rejected").innerText = stats.rejected;
+                        
+                        renderReportsMatrix();
+                      }
+                    }
+                  );
+                }
+              }
+            );
+          }
+        }
+      );
+    }
+
+    function renderReportsMatrix() {
+      var headerRow = document.getElementById("reports-matrix-header-row");
+      var tbody = document.getElementById("reports-table-body");
+      
+      var activeEvent = globalEvents.find(e => e.eventId === document.getElementById("reports-event-select").value);
+      var sessionsCount = activeEvent ? parseInt(activeEvent.sessionsCount) : 1;
+      
+      // Update header row first
+      var headerHtml = `
+        <th>Reg Number</th>
+        <th>Student Name</th>
+        <th>Department</th>
+      `;
+      for (var s = 1; s <= sessionsCount; s++) {
+        headerHtml += `<th class="text-center">Session ${s}</th>`;
+      }
+      headerRow.innerHTML = headerHtml;
+      
+      // Build attendance mapper dictionary (studentId -> sessionName -> status)
+      var attMap = {};
+      globalReportsAttendance.forEach(function(rec) {
+        if (!attMap[rec.studentId]) attMap[rec.studentId] = {};
+        attMap[rec.studentId][rec.session] = rec.status;
+      });
+
+      if (globalStudents.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="${3 + sessionsCount}" class="text-center text-muted py-4">No student records in database.</td></tr>`;
+        return;
+      }
+
+      var html = "";
+      globalStudents.forEach(function(st) {
+        var studentAtt = attMap[st.studentId] || {};
+        
+        html += `<tr>`;
+        html += `<td class="fw-bold">${st.registrationNumber}</td>`;
+        html += `<td class="fw-semibold">${st.name}</td>`;
+        html += `<td class="text-muted">${st.department}</td>`;
+        
+        for (var s = 1; s <= sessionsCount; s++) {
+          var sessionName = "Session " + s;
+          var status = studentAtt[sessionName] || "Absent";
+          
+          // Heuristic: If student has no record, and the event date is today/future -> show "Pending" instead of "Absent"
+          var isEventPast = false;
+          try {
+            if (activeEvent && activeEvent.eventDate) {
+              var today = new Date();
+              today.setHours(0,0,0,0);
+              
+              var dateStr = activeEvent.eventDate.toString().split("T")[0];
+              var parts = dateStr.split("-");
+              var eventTime;
+              if (parts[0].length === 4) {
+                eventTime = new Date(parts[0], parts[1]-1, parts[2]);
+              } else {
+                eventTime = new Date(parts[2], parts[1]-1, parts[0]);
+              }
+              eventTime.setHours(0,0,0,0);
+              if (eventTime < today) {
+                isEventPast = true;
+              }
+            }
+          } catch(e) {}
+          
+          if (status === "Absent" && !isEventPast) {
+            status = "Pending";
+          }
+          
+          var badgeClass = "status-absent";
+          if (status === "Verified") badgeClass = "status-verified";
+          else if (status === "Pending Verification" || status === "Pending") badgeClass = "status-pending";
+          else if (status === "Rejected") badgeClass = "status-rejected";
+          
+          html += `<td class="text-center"><span class="badge-status ${badgeClass}">${status}</span></td>`;
+        }
+        html += `</tr>`;
+      });
+      
+      tbody.innerHTML = html;
+    }
+
+    function exportReportsToExcel() {
+      var eventId = document.getElementById("reports-event-select").value;
+      if (!eventId) return;
+      
+      var activeEvent = globalEvents.find(e => e.eventId === eventId);
+      var eventName = activeEvent ? activeEvent.eventName : "Attenza Event";
+
+      var table = document.getElementById("reports-matrix-table");
+      var wb = XLSX.utils.table_to_book(table, { sheet: "Attendance logs" });
+      
+      // Auto-download using Blob
+      XLSX.writeFile(wb, "Attenza_Attendance_" + eventName.replace(/[^a-zA-Z0-9]/g, "_") + ".xlsx");
+    }
+
+    /* 7. SETTINGS PASSWORD UPDATES */
+    document.getElementById("change-pass-form").addEventListener("submit", function(e) {
+      e.preventDefault();
+      
+      var oldP = document.getElementById("old-pass").value.trim();
+      var newP = document.getElementById("new-pass").value.trim();
+      var confP = document.getElementById("confirm-pass").value.trim();
+      var submitBtn = document.getElementById("pass-submit-btn");
+
+      if (newP !== confP) {
+        showStatusToast("New passwords do not match.", "danger");
+        return;
+      }
+      
+      if (newP.length < 6) {
+        showStatusToast("Password must be at least 6 characters.", "danger");
+        return;
+      }
+
+      submitBtn.disabled = true;
+      submitBtn.innerText = "Updating...";
+
+      var session = getActiveSession();
+      if (!session) return;
+
+      execApi(
+        'updatePassword',
+        { userId: session.userId, oldP: oldP, newP: newP, role: session.role },
+        function(response) {
+          submitBtn.disabled = false;
+          submitBtn.innerText = "Update Password";
+          
+          if (response.success) {
+            showStatusToast(response.message, "success");
+            document.getElementById("change-pass-form").reset();
+          } else {
+            showStatusToast(response.message, "danger");
+          }
+        },
+        function(err) {
+          submitBtn.disabled = false;
+          submitBtn.innerText = "Update Password";
+          showStatusToast("Failed: " + err.message, "danger");
+        }
+      );
+    });
+
+    /* 8. EMERGENCY MANUAL ATTENDANCE */
+    var emaSelectedStudent = null;
+    var emaStudentsCache = [];
+    var emaManualLog = [];
+
+    function loadEmergencyPanel() {
+      // Load events into the emergency event dropdown
+      execApi(
+        'getAdminEvents',
+        {},
+        function(response) {
+          if (response.success) {
+            var sel = document.getElementById('ema-event-select');
+            sel.innerHTML = '<option value="">-- Choose Event --</option>';
+            (response.events || []).forEach(function(ev) {
+              sel.innerHTML += '<option value="' + ev.eventId + '" data-name="' + ev.eventName + '">' + ev.eventName + ' (' + (ev.eventDate || '') + ')</option>';
+            });
+          }
+        }
+      );
+      // Also pre-load students list for searching
+      execApi(
+        'getStudentsList',
+        {},
+        function(response) {
+          if (response.success) {
+            emaStudentsCache = response.students || [];
+          }
+        }
+      );
+      // Reset UI
+      resetEmaUI();
+    }
+
+    function resetEmaUI() {
+      emaSelectedStudent = null;
+      document.getElementById('ema-student-card').classList.add('d-none');
+      document.getElementById('ema-empty-state').classList.remove('d-none');
+      document.getElementById('ema-result-message').classList.add('d-none');
+      document.getElementById('ema-result-message').innerHTML = '';
+      document.getElementById('ema-student-search').value = '';
+      document.getElementById('ema-search-results').style.display = 'none';
+      document.getElementById('ema-reason-select').value = '';
+      document.getElementById('ema-other-reason').classList.add('d-none');
+      document.getElementById('ema-other-reason').value = '';
+      var markBtn = document.getElementById('ema-mark-btn');
+      markBtn.disabled = false;
+      markBtn.innerHTML = '<i class="bi bi-check-circle-fill me-2"></i>Mark Present (Manual)';
+    }
+
+    function onEmaEventChange() {
+      var eventId = document.getElementById('ema-event-select').value;
+      var sessionSel = document.getElementById('ema-session-select');
+      sessionSel.innerHTML = '<option value="">-- Choose Session --</option>';
+      sessionSel.disabled = true;
+      resetEmaUI();
+
+      if (!eventId) return;
+
+      // Fetch sessions for the selected event
+      execApi(
+        'getEventSessions',
+        { eventId: eventId },
+        function(response) {
+          if (response.success && response.sessions) {
+            response.sessions.forEach(function(s) {
+              var label = s.sessionName + ' [' + s.status + ']';
+              sessionSel.innerHTML += '<option value="' + s.sessionName + '" data-status="' + s.status + '">' + label + '</option>';
+            });
+            sessionSel.disabled = false;
+          }
+        }
+      );
+    }
+
+    function searchStudentForEma() {
+      var query = document.getElementById('ema-student-search').value.trim().toLowerCase();
+      var resultsDiv = document.getElementById('ema-search-results');
+      resultsDiv.innerHTML = '';
+      resultsDiv.style.display = 'none';
+
+      if (!query || query.length < 2) {
+        showStatusToast('Enter at least 2 characters to search.', 'warning');
+        return;
+      }
+
+      var matches = emaStudentsCache.filter(function(s) {
+        var regMatch = s.registrationNumber && s.registrationNumber.toString().toLowerCase().indexOf(query) !== -1;
+        var nameMatch = s.name && s.name.toLowerCase().indexOf(query) !== -1;
+        return regMatch || nameMatch;
+      });
+
+      if (matches.length === 0) {
+        resultsDiv.innerHTML = '<div class="list-group-item text-muted small py-2">No students found matching "' + query + '"</div>';
+        resultsDiv.style.display = 'block';
+        return;
+      }
+
+      matches.slice(0, 15).forEach(function(s) {
+        var item = document.createElement('button');
+        item.type = 'button';
+        item.className = 'list-group-item list-group-item-action py-2 d-flex justify-content-between align-items-center';
+        item.innerHTML = '<div><strong>' + s.name + '</strong><br><small class="text-muted">' + s.registrationNumber + ' &middot; ' + (s.department || '') + '</small></div><i class="bi bi-arrow-right text-primary"></i>';
+        item.onclick = function() { selectEmaStudent(s); };
+        resultsDiv.appendChild(item);
+      });
+
+      if (matches.length > 15) {
+        resultsDiv.innerHTML += '<div class="list-group-item text-muted small py-2 text-center">Showing 15 of ' + matches.length + ' matches. Refine your search.</div>';
+      }
+
+      resultsDiv.style.display = 'block';
+    }
+
+    // Allow search on Enter key
+    document.getElementById('ema-student-search').addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') { e.preventDefault(); searchStudentForEma(); }
+    });
+
+    function selectEmaStudent(student) {
+      emaSelectedStudent = student;
+      document.getElementById('ema-search-results').style.display = 'none';
+      document.getElementById('ema-student-search').value = student.name + ' (' + student.registrationNumber + ')';
+
+      // Populate student card
+      document.getElementById('ema-student-name').innerText = student.name;
+      document.getElementById('ema-student-reg').innerText = 'Reg: ' + student.registrationNumber;
+      document.getElementById('ema-student-dept').innerText = student.department || '--';
+      document.getElementById('ema-student-email').innerText = student.email || '--';
+
+      var eventSel = document.getElementById('ema-event-select');
+      var sessionSel = document.getElementById('ema-session-select');
+      document.getElementById('ema-detail-event').innerText = eventSel.options[eventSel.selectedIndex] ? eventSel.options[eventSel.selectedIndex].text : '--';
+      document.getElementById('ema-detail-session').innerText = sessionSel.value || '--';
+
+      // Show card, hide empty state
+      document.getElementById('ema-student-card').classList.remove('d-none');
+      document.getElementById('ema-empty-state').classList.add('d-none');
+      document.getElementById('ema-result-message').classList.add('d-none');
+
+      var markBtn = document.getElementById('ema-mark-btn');
+      markBtn.disabled = false;
+      markBtn.innerHTML = '<i class="bi bi-check-circle-fill me-2"></i>Mark Present (Manual)';
+    }
+
+    function toggleEmaOtherReason() {
+      var val = document.getElementById('ema-reason-select').value;
+      if (val === 'Other') {
+        document.getElementById('ema-other-reason').classList.remove('d-none');
+      } else {
+        document.getElementById('ema-other-reason').classList.add('d-none');
+      }
+    }
+
+    function submitEmergencyAttendance() {
+      var eventId = document.getElementById('ema-event-select').value;
+      var sessionName = document.getElementById('ema-session-select').value;
+      var reason = document.getElementById('ema-reason-select').value;
+      var resultDiv = document.getElementById('ema-result-message');
+      var markBtn = document.getElementById('ema-mark-btn');
+
+      // Validations
+      if (!eventId) { showStatusToast('Please select an event.', 'warning'); return; }
+      if (!sessionName) { showStatusToast('Please select a session.', 'warning'); return; }
+      if (!emaSelectedStudent) { showStatusToast('Please search and select a student.', 'warning'); return; }
+      if (!reason) { showStatusToast('Please select a reason for manual entry.', 'warning'); return; }
+
+      var finalReason = reason;
+      if (reason === 'Other') {
+        var otherText = document.getElementById('ema-other-reason').value.trim();
+        if (!otherText) { showStatusToast('Please specify the reason in the text field.', 'warning'); return; }
+        finalReason = 'Other: ' + otherText;
+      }
+
+      // Get admin session
+      var session = getActiveSession();
+      var adminId = session ? (session.userId || session.username || 'admin') : 'admin';
+
+      // Get event name
+      var eventSel = document.getElementById('ema-event-select');
+      var eventName = eventSel.options[eventSel.selectedIndex] ? eventSel.options[eventSel.selectedIndex].getAttribute('data-name') || eventSel.options[eventSel.selectedIndex].text : '';
+
+      markBtn.disabled = true;
+      markBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Submitting...';
+
+      execApi(
+        'markManualAttendance',
+        {
+          studentId: emaSelectedStudent.studentId,
+          registrationNumber: emaSelectedStudent.registrationNumber,
+          studentName: emaSelectedStudent.name,
+          department: emaSelectedStudent.department || '',
+          eventId: eventId,
+          eventName: eventName,
+          sessionName: sessionName,
+          reason: finalReason,
+          adminId: adminId
+        },
+        function(response) {
+          markBtn.disabled = false;
+          if (response.success) {
+            markBtn.innerHTML = '<i class="bi bi-check-lg me-2"></i>Marked Successfully!';
+            markBtn.classList.remove('btn-warning');
+            markBtn.classList.add('btn-success');
+            resultDiv.className = 'mt-3 alert alert-success d-flex align-items-center gap-2';
+            resultDiv.innerHTML = '<i class="bi bi-check-circle-fill"></i>' + response.message;
+
+            // Add to session log
+            emaManualLog.unshift({
+              name: emaSelectedStudent.name,
+              reg: emaSelectedStudent.registrationNumber,
+              event: eventName,
+              session: sessionName,
+              reason: finalReason,
+              time: new Date().toLocaleTimeString()
+            });
+            renderEmaLog();
+
+            // Reset for next entry after 2 seconds
+            setTimeout(function() {
+              markBtn.classList.remove('btn-success');
+              markBtn.classList.add('btn-warning');
+              resetEmaUI();
+            }, 2000);
+          } else {
+            markBtn.innerHTML = '<i class="bi bi-check-circle-fill me-2"></i>Mark Present (Manual)';
+            resultDiv.className = 'mt-3 alert alert-danger d-flex align-items-center gap-2';
+            resultDiv.innerHTML = '<i class="bi bi-exclamation-triangle-fill"></i>' + response.message;
+          }
+        },
+        function(err) {
+          markBtn.disabled = false;
+          markBtn.innerHTML = '<i class="bi bi-check-circle-fill me-2"></i>Mark Present (Manual)';
+          resultDiv.className = 'mt-3 alert alert-danger d-flex align-items-center gap-2';
+          resultDiv.innerHTML = '<i class="bi bi-exclamation-triangle-fill"></i>Error: ' + err.message;
+        }
+      );
+    }
+
+    function renderEmaLog() {
+      var logDiv = document.getElementById('ema-recent-log');
+      if (emaManualLog.length === 0) {
+        logDiv.innerHTML = '<p class="text-muted mb-0">No manual entries yet.</p>';
+        return;
+      }
+      var html = '<div class="table-responsive"><table class="table table-sm table-hover mb-0"><thead><tr><th>Time</th><th>Student</th><th>Reg No</th><th>Session</th><th>Reason</th></tr></thead><tbody>';
+      emaManualLog.forEach(function(entry) {
+        html += '<tr><td>' + entry.time + '</td><td>' + entry.name + '</td><td>' + entry.reg + '</td><td>' + entry.session + '</td><td><span class="badge bg-warning text-dark">' + entry.reason + '</span></td></tr>';
+      });
+      html += '</tbody></table></div>';
+      logDiv.innerHTML = html;
+    }
+
+  </script>
+</body>
+</html>

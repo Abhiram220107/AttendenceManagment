@@ -1,0 +1,268 @@
+<style>
+/* Attenza Smart Event Attendance & Verification Platform - Stylesheet */
+
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap');
+
+:root {
+  --attenza-orange: #FF7A00;
+  --attenza-orange-hover: #E86800;
+  --attenza-charcoal: #1E1E1E;
+  --attenza-white: #FFFFFF;
+  --bg-slate: #FAFAFA;
+  --bg-dark: #121212;
+  --border-slate: #D9D9D9;
+  --text-secondary: #6B7280;
+  
+  /* Legacy compatibility aliases mapped to Attenza Palette */
+  --ieee-blue: #FF7A00;
+  --ieee-dark: #E86800;
+  --ieee-gold: #1E1E1E;
+}
+
+body {
+  font-family: 'Outfit', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  background-color: var(--bg-slate);
+  color: var(--attenza-charcoal);
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+}
+
+/* Primary Brand Button Overrides */
+.btn-primary {
+  background-color: var(--attenza-orange) !important;
+  border-color: var(--attenza-orange) !important;
+  color: #FFFFFF !important;
+  font-weight: 600;
+  transition: all 0.2s ease-in-out;
+}
+
+.btn-primary:hover, .btn-primary:focus, .btn-primary:active {
+  background-color: var(--attenza-orange-hover) !important;
+  border-color: var(--attenza-orange-hover) !important;
+  box-shadow: 0 4px 12px rgba(255, 122, 0, 0.25) !important;
+}
+
+.btn-outline-primary {
+  color: var(--attenza-orange) !important;
+  border-color: var(--attenza-orange) !important;
+}
+
+.btn-outline-primary:hover {
+  background-color: var(--attenza-orange) !important;
+  color: #FFFFFF !important;
+}
+
+.text-primary {
+  color: var(--attenza-orange) !important;
+}
+
+.bg-primary {
+  background-color: var(--attenza-orange) !important;
+}
+
+/* Custom transitions and elevations */
+.card-premium {
+  border: 1px solid var(--border-slate);
+  border-radius: 12px;
+  background: #ffffff;
+  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.03), 0 2px 4px -1px rgba(0,0,0,0.02);
+  transition: all 0.25s ease-in-out;
+}
+
+.card-premium:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 20px -3px rgba(0,0,0,0.06), 0 4px 6px -2px rgba(0,0,0,0.03);
+}
+
+/* Collapsible sidebar layouts */
+.sidebar-slate {
+  background-color: var(--attenza-charcoal);
+  color: #f8fafc;
+  min-width: 260px;
+  max-width: 260px;
+  min-height: 100vh;
+  transition: all 0.3s;
+}
+
+.sidebar-brand {
+  border-bottom: 1px solid #2d2d2d;
+  height: 64px;
+}
+
+.sidebar-item {
+  color: #9ca3af;
+  padding: 12px 18px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+  font-weight: 500;
+  border-radius: 8px;
+  transition: all 0.2s;
+  margin: 2px 8px;
+}
+
+.sidebar-item:hover, .sidebar-item.active {
+  background-color: var(--attenza-orange);
+  color: #ffffff;
+  box-shadow: 0 4px 10px rgba(255, 122, 0, 0.3);
+}
+
+/* Camera and capture layout aspect-ratios */
+.camera-viewport {
+  aspect-ratio: 3/4;
+  background-color: #020617;
+  border: 1px solid #334155;
+  border-radius: 10px;
+  overflow: hidden;
+  position: relative;
+}
+
+.camera-feed {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Stat icons bg */
+.stat-icon {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Verification zoom cards */
+.verification-zoom {
+  cursor: zoom-in;
+  transition: transform 0.3s;
+}
+.verification-zoom:hover {
+  transform: scale(1.03);
+}
+
+/* Force Light Theme & High-Contrast Quiet Zone for QR Codes (Fixes Dark Mode scanning failures) */
+#qr-canvas-holder, 
+.qr-container,
+#hidden-qr-element {
+  background-color: #FFFFFF !important;
+  background: #FFFFFF !important;
+  color-scheme: light !important;
+  filter: none !important;
+  -webkit-filter: none !important;
+  padding: 16px !important;
+  border-radius: 12px !important;
+  box-shadow: 0 0 0 8px #FFFFFF, 0 8px 24px rgba(0, 0, 0, 0.12) !important;
+  display: inline-block !important;
+}
+
+#qr-canvas-holder img,
+#qr-canvas-holder canvas {
+  background-color: #FFFFFF !important;
+  color-scheme: light !important;
+  filter: none !important;
+  -webkit-filter: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+
+/* Status badges */
+.badge-status {
+  padding: 5px 10px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  border-radius: 6px;
+}
+
+.status-verified {
+  background-color: #ecfdf5;
+  color: #065f46;
+  border: 1px solid #a7f3d0;
+}
+
+.status-pending {
+  background-color: #fffbeb;
+  color: #92400e;
+  border: 1px solid #fde68a;
+}
+
+.status-rejected {
+  background-color: #fef2f2;
+  color: #991b1b;
+  border: 1px solid #fca5a5;
+}
+
+.status-absent {
+  background-color: #f1f5f9;
+  color: #64748b;
+  border: 1px solid #cbd5e1;
+}
+
+/* Mobile responsive drawer toggles & camera viewport */
+#qr-reader-container {
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+#qr-reader {
+  width: 100% !important;
+  max-width: 100% !important;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+#qr-reader video {
+  width: 100% !important;
+  height: auto !important;
+  object-fit: cover !important;
+  border-radius: 12px;
+}
+
+@media (max-width: 991.98px) {
+  .sidebar-slate {
+    position: fixed;
+    z-index: 1050;
+    left: -260px;
+  }
+  .sidebar-slate.open {
+    left: 0;
+  }
+}
+
+@media (max-width: 576px) {
+  body {
+    font-size: 0.9rem;
+  }
+  .card {
+    padding: 1rem !important;
+    border-radius: 10px !important;
+  }
+  header {
+    padding-left: 0.75rem !important;
+    padding-right: 0.75rem !important;
+  }
+  .btn {
+    padding: 0.65rem 1rem !important;
+  }
+}
+</style>

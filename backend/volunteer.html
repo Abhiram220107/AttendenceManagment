@@ -1,0 +1,981 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Attenza | Volunteer Portal</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+
+  <!-- CDN for HTML5-QRCode Scanner -->
+  <script src="https://unpkg.com/html5-qrcode"></script>
+  
+  <!-- Common CSS Styles -->
+  <link rel="stylesheet" href="styles.css">
+  <?!= include('styles'); ?>
+</head>
+
+<body class="bg-light">
+
+  <div class="min-h-screen d-flex flex-column justify-content-between">
+
+    <!-- Top header navbar -->
+    <header
+      class="bg-white border-bottom shadow-sm h-16 flex items-center justify-between px-6 d-flex align-items-center px-4"
+      style="height: 64px;">
+      <div class="d-flex align-items-center gap-2">
+        <img src="icon-light.svg" alt="Attenza" style="height: 28px;">
+        <span class="fs-5 font-bold tracking-wider text-gray-800">Attenza</span>
+        <span class="badge bg-primary ms-1">Volunteer Portal</span>
+      </div>
+
+      <div class="ms-auto d-flex align-items-center gap-3">
+        <button onclick="openChangePasswordModal()" class="btn btn-outline-secondary btn-sm py-1.5 px-3">
+          Change Password
+        </button>
+        <button onclick="clearSessionAndLogout()" class="btn btn-outline-danger btn-sm py-1.5 px-3">
+          <i class="bi bi-box-arrow-right"></i> Logout
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Workspace Container -->
+    <main class="flex-grow-1 p-4 max-w-3xl w-100 mx-auto space-y-4" style="max-width: 768px;">
+
+      <!-- Card: Select Scope -->
+      <div class="card border border-slate-200 bg-white p-4 shadow-sm mb-4">
+        <div class="d-flex align-items-center gap-2 border-bottom pb-2 mb-3">
+          <i class="bi bi-folder2-open text-primary fs-5 animate-pulse-subtle"></i>
+          <h3 class="fs-6 font-bold mb-0 text-gray-800">Select Scope</h3>
+        </div>
+
+        <div class="row g-3">
+          <div class="col-sm-6">
+            <label class="form-label font-bold text-sm">Target Event</label>
+            <select id="vol-event-select" onchange="detectActiveSession()" class="form-select border border-slate-200">
+              <option value="">Loading events...</option>
+            </select>
+          </div>
+          <div class="col-sm-6 d-none">
+            <label class="form-label font-bold text-sm">Select Attendance Session</label>
+            <select id="vol-session-select" class="form-select border border-slate-200">
+              <option value="Session 1">Session 1</option>
+            </select>
+          </div>
+          <div class="col-sm-6">
+            <label class="form-label font-bold text-sm">Detected Session Status</label>
+            <div id="session-detection-status" class="py-2">
+              <span class="text-muted small">Select an event to detect session...</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Feedback alerts -->
+      <div id="vol-error-alert" class="alert alert-danger d-none d-flex align-items-center gap-2 mb-4" role="alert">
+        <i class="bi bi-exclamation-triangle-fill"></i>
+        <div id="vol-error-message">Error message</div>
+      </div>
+
+      <div id="vol-success-alert" class="alert alert-success d-none d-flex align-items-center gap-2 mb-4" role="alert">
+        <i class="bi bi-check-circle-fill"></i>
+        <div id="vol-success-message">Success message</div>
+      </div>
+
+      <!-- WORKFLOW PHASE 1: TRIGGER SCANNING -->
+      <div id="workflow-scan-start" class="text-center py-5 px-3 card border-slate-200 bg-white shadow-sm mb-4">
+        <!-- Live scanner viewport, hidden by default -->
+        <div id="qr-reader-container" class="d-none mb-3">
+          <div id="qr-reader" class="mx-auto rounded border bg-black" style="max-width: 480px; width: 100%; aspect-ratio: 1/1; overflow: hidden;"></div>
+          <button type="button" onclick="stopLiveQRScanner()" class="btn btn-danger mt-3 font-bold px-4">
+            <i class="bi bi-camera-video-off-fill me-1.5"></i> Stop Live Scanner
+          </button>
+        </div>
+
+        <!-- Default initial scanning view -->
+        <div id="qr-initial-view">
+          <i class="bi bi-qr-code-scan text-muted fs-1 mb-3 animate-pulse-subtle"></i>
+          <h4 class="fw-bold text-gray-800">Scan Student QR Code</h4>
+          <p class="text-muted small mx-auto px-4" style="max-width: 420px;">
+            Use the live camera scanner to scan the student's QR code instantly, or upload a saved QR code photo.
+          </p>
+
+          <input type="file" id="qr-file-input" accept="image/*" capture="environment" class="d-none" onchange="handleQRFileInput(event)">
+          <!-- Off-screen container for background file decoding -->
+          <div id="qr-decoder-hidden" style="position:absolute; left:-9999px; top:-9999px; width:300px; height:300px; overflow:hidden;"></div>
+
+          <div class="d-flex flex-wrap justify-content-center gap-3 mt-4">
+            <button type="button" id="start-live-btn" onclick="startLiveQRScanner()" class="btn btn-primary px-4 py-3 font-bold d-inline-flex align-items-center justify-content-center gap-2" style="min-width: 220px;" disabled>
+              <i class="bi bi-camera-video-fill"></i> Start Live Scanner
+            </button>
+            <button type="button" id="upload-scan-btn" onclick="triggerQRFileInput()" class="btn btn-outline-secondary px-4 py-3 font-bold d-inline-flex align-items-center justify-content-center gap-2" style="min-width: 220px;" disabled>
+              <i class="bi bi-upload"></i> Upload / Photo QR
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- WORKFLOW PHASE 3: PHOTO CAPTURING PANEL -->
+      <div id="workflow-capture" class="space-y-4 d-none">
+
+        <!-- Scanned Student info card -->
+        <div class="card bg-dark text-white p-4 border-0 shadow-md relative mb-4">
+          <button onclick="resetScanningWorkflow()"
+            class="btn btn-close btn-close-white position-absolute end-0 top-0 m-3" aria-label="Close"></button>
+
+          <div class="d-flex align-items-center gap-2.5 mb-3 border-bottom border-slate-800 pb-2">
+            <i class="bi bi-person-check-fill text-success fs-5"></i>
+            <h4 class="fs-6 font-bold text-success uppercase tracking-wider mb-0">Student Identified</h4>
+          </div>
+
+          <div class="row g-3 text-start">
+            <div class="col-sm-4">
+              <span class="small text-muted block font-semibold">Student Name</span>
+              <span id="scan-name" class="fw-bold truncate block">-</span>
+            </div>
+            <div class="col-sm-4">
+              <span class="small text-muted block font-semibold">Registration Number</span>
+              <span id="scan-reg" class="fw-bold tracking-wider block">-</span>
+            </div>
+            <div class="col-sm-4">
+              <span class="small text-muted block font-semibold">Department</span>
+              <span id="scan-dept" class="fw-bold truncate block">-</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Split screen WebRTC capturing cards -->
+        <div class="row mb-4">
+
+          <!-- Column 1: Face Capture -->
+          <div class="col-md-6 mb-3">
+            <div class="card border border-slate-200 p-3 bg-white text-center">
+              <span class="text-xs text-muted font-bold uppercase tracking-wider block mb-2">Step 1: Capture Face
+                Photo</span>
+              <div class="camera-viewport mb-3">
+                <video id="video-face" class="camera-feed d-none" autoplay playsinline muted></video>
+                <img id="img-face-preview" class="w-100 h-100 object-fit-cover d-none" alt="Face preview">
+                <div id="placeholder-face"
+                  class="d-flex flex-column align-items-center justify-content-center h-100 text-muted">
+                  <i class="bi bi-camera fs-2"></i>
+                  <span class="small mt-1">Camera offline</span>
+                </div>
+              </div>
+
+              <!-- Selector for available cameras -->
+              <select id="cam-face-select" class="form-select form-select-sm mb-3 d-none"></select>
+
+              <div class="d-flex gap-2">
+                <button type="button" id="btn-face-start" onclick="toggleCameraFeed('face', 'start')"
+                  class="btn btn-outline-primary btn-sm flex-grow-1 font-bold">Start Camera</button>
+                <button type="button" id="btn-face-capture" onclick="toggleCameraFeed('face', 'capture')"
+                  class="btn btn-success btn-sm flex-grow-1 font-bold d-none">Capture Frame</button>
+                <button type="button" id="btn-face-retake" onclick="toggleCameraFeed('face', 'retake')"
+                  class="btn btn-outline-secondary btn-sm flex-grow-1 font-bold d-none">Retake</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Column 2: ID Card Capture -->
+          <div class="col-md-6 mb-3">
+            <div class="card border border-slate-200 p-3 bg-white text-center">
+              <span class="text-xs text-muted font-bold uppercase tracking-wider block mb-2">Step 2: Capture ID Card
+                Photo</span>
+              <div class="camera-viewport mb-3">
+                <video id="video-id" class="camera-feed d-none" autoplay playsinline muted></video>
+                <img id="img-id-preview" class="w-100 h-100 object-fit-cover d-none" alt="ID preview">
+                <div id="placeholder-id"
+                  class="d-flex flex-column align-items-center justify-content-center h-100 text-muted">
+                  <i class="bi bi-card-image fs-2"></i>
+                  <span class="small mt-1">Camera offline</span>
+                </div>
+              </div>
+
+              <!-- Selector for available cameras -->
+              <select id="cam-id-select" class="form-select form-select-sm mb-3 d-none"></select>
+
+              <div class="d-flex gap-2">
+                <button type="button" id="btn-id-start" onclick="toggleCameraFeed('id', 'start')"
+                  class="btn btn-outline-primary btn-sm flex-grow-1 font-bold">Start Camera</button>
+                <button type="button" id="btn-id-capture" onclick="toggleCameraFeed('id', 'capture')"
+                  class="btn btn-success btn-sm flex-grow-1 font-bold d-none">Capture Frame</button>
+                <button type="button" id="btn-id-retake" onclick="toggleCameraFeed('id', 'retake')"
+                  class="btn btn-outline-secondary btn-sm flex-grow-1 font-bold d-none">Retake</button>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Submit Attendance -->
+        <div class="d-flex justify-content-end pt-3 border-top">
+          <button type="button" id="submit-att-btn" onclick="submitAttendanceRecord()"
+            class="btn btn-success px-5 py-3 font-bold shadow-md" disabled>
+            <i class="bi bi-send"></i> Submit Attendance
+          </button>
+        </div>
+
+      </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white border-top py-3 text-center text-muted small mt-5">
+      &copy; 2026 <strong>Attenza</strong>. Smart Event Attendance &amp; Verification Platform.
+    </footer>
+
+  </div>
+
+  <!-- Modal: Change Password -->
+  <div id="pass-modal" class="modal fade" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content p-2">
+        <div class="modal-header">
+          <h5 class="modal-title font-bold">Change Login Password</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <form id="pass-form" onsubmit="submitPasswordChange(event)">
+          <div class="modal-body space-y-3">
+            <div id="pass-error-alert" class="alert alert-danger d-none d-flex align-items-center gap-2" role="alert">
+              <i class="bi bi-exclamation-triangle-fill"></i>
+              <div id="pass-error-msg">Error</div>
+            </div>
+            <div id="pass-success-alert" class="alert alert-success d-none d-flex align-items-center gap-2"
+              role="alert">
+              <i class="bi bi-check-circle-fill"></i>
+              <div id="pass-success-msg">Success</div>
+            </div>
+            <div class="mb-3">
+              <label for="old-pass" class="form-label font-bold text-sm">Current Password</label>
+              <input type="password" id="old-pass" class="form-control" placeholder="Enter current password" required>
+            </div>
+            <div class="mb-3">
+              <label for="new-pass" class="form-label font-bold text-sm">New Password</label>
+              <input type="password" id="new-pass" class="form-control" placeholder="Minimum 6 characters" required>
+            </div>
+            <div class="mb-3">
+              <label for="confirm-pass" class="form-label font-bold text-sm">Confirm New Password</label>
+              <input type="password" id="confirm-pass" class="form-control" placeholder="Retype new password" required>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" id="pass-submit-btn" class="btn btn-primary">Update Password</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <input type="file" id="capture-face-input" accept="image/*" capture="user" class="d-none"
+    onchange="handleCaptureFileInput(event, 'face')">
+  <input type="file" id="capture-id-input" accept="image/*" capture="environment" class="d-none"
+    onchange="handleCaptureFileInput(event, 'id')">
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+  <!-- Pass GAS Web App URL to Frontend JS -->
+  <script>
+    var WEB_APP_URL = "<?!= ScriptApp.getService().getUrl(); ?>";
+  </script>
+
+  <!-- Common JavaScript Controller -->
+  <script src="script.js"></script>
+  <?!= include('script'); ?>
+
+  <script>
+    var html5QrScanner = null;
+    var scannedStudentId = null;
+    var facePhotoBase64 = null;
+    var idPhotoBase64 = null;
+
+    var passModalInstance = null;
+    var currentCams = [];
+    var isSubmittingAtt = false;
+
+    function setScanControlsDisabled(disabled) {
+      var liveBtn = document.getElementById("start-live-btn");
+      var uploadBtn = document.getElementById("upload-scan-btn");
+      if (liveBtn) liveBtn.disabled = disabled;
+      if (uploadBtn) uploadBtn.disabled = disabled;
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+      // 1. Enforce volunteer security lock
+      enforceRoleSecurity(['volunteer'], 'volunteer');
+
+      // Initialize password change modal
+      passModalInstance = new bootstrap.Modal(document.getElementById('pass-modal'));
+
+      // Fetch active events drop
+      loadEventsSelector();
+
+      // Enumerate camera devices for select boxes
+      navigator.mediaDevices.enumerateDevices()
+        .then(function (devices) {
+          currentCams = devices.filter(d => d.kind === 'videoinput');
+          setupCameraSelectBoxes();
+        });
+
+      // Restore scanned student state & photos if page reloaded (e.g. after native camera opened)
+      var savedStudent = sessionStorage.getItem('ieee_scanned_student');
+      if (savedStudent) {
+        try {
+          var st = JSON.parse(savedStudent);
+          scannedStudentId = st.studentId;
+          document.getElementById("scan-name").innerText = st.name;
+          document.getElementById("scan-reg").innerText = st.registrationNumber;
+          document.getElementById("scan-dept").innerText = st.department;
+          
+          var scanStart = document.getElementById("workflow-scan-start");
+          var captureWorkflow = document.getElementById("workflow-capture");
+          if (scanStart) scanStart.classList.add("d-none");
+          if (captureWorkflow) captureWorkflow.classList.remove("d-none");
+
+          // Restore Face photo if already captured
+          var savedFace = sessionStorage.getItem('ieee_face_photo');
+          if (savedFace) {
+            facePhotoBase64 = savedFace;
+            var imgFace = document.getElementById("img-face-preview");
+            var holderFace = document.getElementById("placeholder-face");
+            var btnFaceStart = document.getElementById("btn-face-start");
+            var btnFaceRetake = document.getElementById("btn-face-retake");
+            if (imgFace) { imgFace.src = savedFace; imgFace.classList.remove("d-none"); }
+            if (holderFace) holderFace.classList.add("d-none");
+            if (btnFaceStart) btnFaceStart.classList.add("d-none");
+            if (btnFaceRetake) btnFaceRetake.classList.remove("d-none");
+          }
+
+          // Restore ID photo if already captured
+          var savedId = sessionStorage.getItem('ieee_id_photo');
+          if (savedId) {
+            idPhotoBase64 = savedId;
+            var imgId = document.getElementById("img-id-preview");
+            var holderId = document.getElementById("placeholder-id");
+            var btnIdStart = document.getElementById("btn-id-start");
+            var btnIdRetake = document.getElementById("btn-id-retake");
+            if (imgId) { imgId.src = savedId; imgId.classList.remove("d-none"); }
+            if (holderId) holderId.classList.add("d-none");
+            if (btnIdStart) btnIdStart.classList.add("d-none");
+            if (btnIdRetake) btnIdRetake.classList.remove("d-none");
+          }
+
+          checkSubmissionStatusReady();
+        } catch(e) {
+          sessionStorage.removeItem('ieee_scanned_student');
+          sessionStorage.removeItem('ieee_face_photo');
+          sessionStorage.removeItem('ieee_id_photo');
+        }
+      }
+    });
+
+    function loadEventsSelector() {
+      var eselect = document.getElementById("vol-event-select");
+      execApi(
+        'getVolunteerEvents',
+        {},
+        function(response) {
+          if (response.success) {
+            eselect.innerHTML = "";
+
+            if (response.events.length === 0) {
+              eselect.innerHTML = '<option value="">No events created by admin</option>';
+              return;
+            }
+
+            response.events.forEach(function (ev) {
+              var id = ev.eventId || ev.eventid || ev['event id'];
+              eselect.innerHTML += `<option value="${id}">${ev.eventName}</option>`;
+            });
+
+            setScanControlsDisabled(false);
+            detectActiveSession();
+          } else {
+            showStatusToast("Failed to fetch events dropdown: " + response.message, "danger");
+            eselect.innerHTML = `<option value="">Error: ${response.message}</option>`;
+          }
+        },
+        function(err) {
+          showStatusToast("API Failure: " + err.message, "danger");
+          eselect.innerHTML = `<option value="">API Error: ${err.message}</option>`;
+        }
+      );
+    }
+
+    var globalActiveSessionName = null;
+    function detectActiveSession() {
+      var eventId = document.getElementById("vol-event-select").value;
+      if (!eventId) return;
+
+      var statusDiv = document.getElementById("session-detection-status");
+
+      statusDiv.innerHTML = `<span class="spinner-border spinner-border-sm text-primary"></span> Checking for open session...`;
+      setScanControlsDisabled(true);
+
+      execApi(
+        'getActiveSession',
+        { eventId: eventId },
+        function(response) {
+          if (response.success && response.isOpen) {
+            globalActiveSessionName = response.sessionName;
+
+            var sselect = document.getElementById("vol-session-select");
+            sselect.innerHTML = `<option value="${globalActiveSessionName}">${globalActiveSessionName}</option>`;
+            sselect.value = globalActiveSessionName;
+
+            statusDiv.innerHTML = `
+              <div class="d-flex align-items-center justify-content-between p-2 rounded border border-success bg-success bg-opacity-10">
+                <span class="fw-bold text-slate-800 small">${globalActiveSessionName}</span>
+                <span class="badge bg-success px-2.5 py-1.5 uppercase font-bold text-xs">OPEN</span>
+              </div>
+            `;
+            setScanControlsDisabled(false);
+            // Only reset workflow if no student is currently scanned or being captured
+            if (!scannedStudentId && !sessionStorage.getItem('ieee_scanned_student')) {
+              resetScanningWorkflow();
+            }
+          } else {
+            globalActiveSessionName = null;
+            document.getElementById("vol-session-select").innerHTML = `<option value="">No Active Session</option>`;
+
+            statusDiv.innerHTML = `
+              <div class="p-2.5 rounded border border-warning bg-warning bg-opacity-10 small text-muted text-start">
+                <i class="bi bi-lock-fill text-warning me-1.5"></i>
+                <b>No attendance session is currently open.</b> Please wait for the administrator to open a session.
+              </div>
+            `;
+            setScanControlsDisabled(true);
+            resetScanningWorkflow();
+          }
+        },
+        function(err) {
+          statusDiv.innerHTML = `<div class="alert alert-danger font-bold text-xs py-1.5 px-3 mb-0">Error checking session status: ${err.message}</div>`;
+          setScanControlsDisabled(true);
+          resetScanningWorkflow();
+        }
+      );
+    }
+
+    function setupCameraSelectBoxes() {
+      ['face', 'id'].forEach(function (type) {
+        var sel = document.getElementById("cam-" + type + "-select");
+        sel.innerHTML = "";
+        currentCams.forEach(function (cam, idx) {
+          sel.innerHTML += `<option value="${cam.deviceId}">${cam.label || 'Camera ' + (idx + 1)}</option>`;
+        });
+        if (currentCams.length > 1) {
+          sel.classList.remove("d-none");
+        }
+      });
+    }
+
+    /* Workflow Phase Control */
+    function resetScanningWorkflow() {
+      stopCaptureCamera();
+      stopLiveQRScanner();
+
+      var scanStart = document.getElementById("workflow-scan-start");
+      var captureWorkflow = document.getElementById("workflow-capture");
+      if (scanStart) scanStart.classList.remove("d-none");
+      if (captureWorkflow) captureWorkflow.classList.add("d-none");
+
+      scannedStudentId = null;
+      facePhotoBase64 = null;
+      idPhotoBase64 = null;
+
+      // Clear saved student state & photos
+      sessionStorage.removeItem('ieee_scanned_student');
+      sessionStorage.removeItem('ieee_face_photo');
+      sessionStorage.removeItem('ieee_id_photo');
+
+      // Reset video panels safely
+      ['face', 'id'].forEach(function (type) {
+        var video = document.getElementById("video-" + type);
+        var preview = document.getElementById("img-" + type + "-preview");
+        var placeholder = document.getElementById("placeholder-" + type);
+        var btnStart = document.getElementById("btn-" + type + "-start");
+        var btnCapture = document.getElementById("btn-" + type + "-capture");
+        var btnRetake = document.getElementById("btn-" + type + "-retake");
+
+        if (video) video.classList.add("d-none");
+        if (preview) preview.classList.add("d-none");
+        if (placeholder) placeholder.classList.remove("d-none");
+        if (btnStart) btnStart.classList.remove("d-none");
+        if (btnCapture) btnCapture.classList.add("d-none");
+        if (btnRetake) btnRetake.classList.add("d-none");
+      });
+
+      var submitBtn = document.getElementById("submit-att-btn");
+      if (submitBtn) submitBtn.disabled = true;
+    }
+
+    function startLiveQRScanner() {
+      // Clear previous alerts
+      var errAlert = document.getElementById("vol-error-alert");
+      var succAlert = document.getElementById("vol-success-alert");
+      if (errAlert) errAlert.classList.add("d-none");
+      if (succAlert) succAlert.classList.add("d-none");
+
+      // Stop any existing scanner just in case
+      if (html5QrScanner) {
+        try {
+          html5QrScanner.stop().catch(function () { });
+        } catch (e) { }
+      }
+
+      // Show container and hide initial UI if elements exist
+      var readerContainer = document.getElementById("qr-reader-container");
+      var initialView = document.getElementById("qr-initial-view");
+      if (readerContainer) readerContainer.classList.remove("d-none");
+      if (initialView) initialView.classList.add("d-none");
+
+      // Initialize Html5Qrcode
+      html5QrScanner = new Html5Qrcode("qr-reader");
+
+      var config = {
+        fps: 10,
+        qrbox: { width: 250, height: 250 }
+      };
+
+      html5QrScanner.start(
+        { facingMode: "environment" },
+        config,
+        function (decodedText) {
+          // Success callback
+          stopLiveQRScanner();
+          handleQRScanSuccess(decodedText);
+        },
+        function (err) {
+          // Verbose log: ignore scanner lookup errors
+        }
+      ).catch(function (err) {
+        // Start failure (permission denied, policy restriction, etc)
+        console.error("Live QR Scanner Start Error: ", err);
+        stopLiveQRScanner();
+
+        // Show error alert
+        var errorDiv = document.getElementById("vol-error-alert");
+        var errorMsg = document.getElementById("vol-error-message");
+        if (errorDiv && errorMsg) {
+          errorMsg.innerText = "Unable to start QR camera. Please check browser permissions.";
+          errorDiv.classList.remove("d-none");
+          errorDiv.scrollIntoView({ behavior: 'smooth' });
+        }
+      });
+    }
+
+    function stopLiveQRScanner() {
+      if (html5QrScanner) {
+        try {
+          html5QrScanner.stop().then(function () {
+            try { html5QrScanner.clear(); } catch (e) { }
+            html5QrScanner = null;
+          }).catch(function (e) {
+            console.warn("Failed to stop scanner cleanly: ", e);
+            try { html5QrScanner.clear(); } catch (err) { }
+            html5QrScanner = null;
+          });
+        } catch (e) {
+          console.warn("Exception while stopping scanner: ", e);
+          try { html5QrScanner.clear(); } catch (err) { }
+          html5QrScanner = null;
+        }
+      }
+
+      // Restore initial UI view safely
+      var readerContainer = document.getElementById("qr-reader-container");
+      var initialView = document.getElementById("qr-initial-view");
+      if (readerContainer) readerContainer.classList.add("d-none");
+      if (initialView) initialView.classList.remove("d-none");
+    }
+
+    function triggerQRFileInput() {
+      document.getElementById("qr-file-input").value = "";
+      document.getElementById("qr-file-input").click();
+    }
+
+    function handleQRFileInput(event) {
+      var file = event.target.files[0];
+      if (!file) return;
+
+      document.getElementById("vol-error-alert").classList.add("d-none");
+      document.getElementById("vol-success-alert").classList.add("d-none");
+
+      showStatusToast("Decoding QR from image...", "success");
+
+      // Read the file, resize it (phone cameras produce huge images that break the decoder),
+      // then convert back to a File object for Html5Qrcode.scanFile()
+      var reader = new FileReader();
+      reader.onload = function (e) {
+        var img = new Image();
+        img.onload = function () {
+          // Resize to max 1024px to help the QR decoder
+          var canvas = document.createElement("canvas");
+          var maxSize = 1024;
+          var width = img.width;
+          var height = img.height;
+
+          if (width > maxSize || height > maxSize) {
+            if (width > height) {
+              height = Math.round((height * maxSize) / width);
+              width = maxSize;
+            } else {
+              width = Math.round((width * maxSize) / height);
+              height = maxSize;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          var ctx = canvas.getContext("2d");
+          ctx.drawImage(img, 0, 0, width, height);
+
+          // Convert canvas back to a blob/file for scanFile
+          canvas.toBlob(function (blob) {
+            if (!blob) {
+              document.getElementById("vol-error-message").innerText = "Failed to process image. Please try again.";
+              document.getElementById("vol-error-alert").classList.remove("d-none");
+              return;
+            }
+
+            var resizedFile = new File([blob], "qr_scan.jpg", { type: "image/jpeg" });
+
+            try {
+              var tempScanner = new Html5Qrcode("qr-decoder-hidden");
+              tempScanner.scanFile(resizedFile, false)
+                .then(function (decodedText) {
+                  try { tempScanner.clear(); } catch (e) { }
+                  handleQRScanSuccess(decodedText);
+                })
+                .catch(function (err) {
+                  try { tempScanner.clear(); } catch (e) { }
+                  console.error("QR decode error:", err);
+                  document.getElementById("vol-error-message").innerText = "Could not decode QR code from photo. Make sure the QR code is clear, well-lit, and centered, then try again.";
+                  document.getElementById("vol-error-alert").classList.remove("d-none");
+                  document.getElementById("vol-error-alert").scrollIntoView({ behavior: 'smooth' });
+                });
+            } catch (err) {
+              document.getElementById("vol-error-message").innerText = "QR processing error: " + err.message;
+              document.getElementById("vol-error-alert").classList.remove("d-none");
+              document.getElementById("vol-error-alert").scrollIntoView({ behavior: 'smooth' });
+            }
+          }, "image/jpeg", 0.9);
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function handleQRScanSuccess(qrToken) {
+      document.getElementById("workflow-scan-start").classList.add("d-none");
+
+      execApi(
+        'scanQRToken',
+        { qrToken: qrToken },
+        function(response) {
+          if (response.success) {
+            var st = response.student;
+            scannedStudentId = st.studentId;
+
+            // Save to sessionStorage so state survives page reloads on mobile camera capture
+            sessionStorage.setItem('ieee_scanned_student', JSON.stringify({
+              studentId: st.studentId,
+              name: st.name,
+              registrationNumber: st.registrationNumber,
+              department: st.department
+            }));
+
+            document.getElementById("scan-name").innerText = st.name;
+            document.getElementById("scan-reg").innerText = st.registrationNumber;
+            document.getElementById("scan-dept").innerText = st.department;
+
+            var scanStart = document.getElementById("workflow-scan-start");
+            var captureWorkflow = document.getElementById("workflow-capture");
+            if (scanStart) scanStart.classList.add("d-none");
+            if (captureWorkflow) captureWorkflow.classList.remove("d-none");
+          } else {
+            document.getElementById("vol-error-message").innerText = response.message;
+            document.getElementById("vol-error-alert").classList.remove("d-none");
+            document.getElementById("vol-error-alert").scrollIntoView({ behavior: 'smooth' });
+          }
+        },
+        function(err) {
+          document.getElementById("vol-error-message").innerText = "API communication failure: " + err.message;
+          document.getElementById("vol-error-alert").classList.remove("d-none");
+          document.getElementById("vol-error-alert").scrollIntoView({ behavior: 'smooth' });
+        }
+      );
+    }
+
+    // Default to native camera input (getUserMedia is blocked by GAS iframe policies)
+    var useNativeCamera = { face: true, id: true };
+
+    /* WebRTC Photo captures toggles */
+    function toggleCameraFeed(type, action) {
+      var video = document.getElementById("video-" + type);
+      var preview = document.getElementById("img-" + type + "-preview");
+      var placeholder = document.getElementById("placeholder-" + type);
+
+      var btnStart = document.getElementById("btn-" + type + "-start");
+      var btnCapture = document.getElementById("btn-" + type + "-capture");
+      var btnRetake = document.getElementById("btn-" + type + "-retake");
+
+      var deviceId = document.getElementById("cam-" + type + "-select").value || null;
+
+      if (action === 'start' || action === 'retake') {
+        if (useNativeCamera[type]) {
+          triggerCaptureFileInput(type);
+          return;
+        }
+
+        placeholder.classList.add("d-none");
+        preview.classList.add("d-none");
+        video.classList.remove("d-none");
+
+        btnStart.classList.add("d-none");
+        btnRetake.classList.add("d-none");
+        btnCapture.classList.remove("d-none");
+
+        if (type === 'face') facePhotoBase64 = null;
+        else idPhotoBase64 = null;
+        checkSubmissionStatusReady();
+
+        startCaptureCamera("video-" + type, deviceId, function (err) {
+          if (err) {
+            showStatusToast("Using native device camera fallback.", "warning");
+            useNativeCamera[type] = true;
+            triggerCaptureFileInput(type);
+          }
+        });
+      }
+      else if (action === 'capture') {
+        var base64 = captureFrameFromFeed("video-" + type);
+        if (base64) {
+          video.classList.add("d-none");
+          preview.src = base64;
+          preview.classList.remove("d-none");
+
+          btnCapture.classList.add("d-none");
+          btnRetake.classList.remove("d-none");
+
+          if (type === 'face') facePhotoBase64 = base64;
+          else idPhotoBase64 = base64;
+          checkSubmissionStatusReady();
+        }
+      }
+      else if (action === 'cancel') {
+        stopCaptureCamera();
+        video.classList.add("d-none");
+        preview.classList.add("d-none");
+        placeholder.classList.remove("d-none");
+
+        btnStart.classList.remove("d-none");
+        btnCapture.classList.add("d-none");
+        btnRetake.classList.add("d-none");
+      }
+    }
+
+    function triggerCaptureFileInput(type) {
+      document.getElementById("capture-" + type + "-input").value = "";
+      document.getElementById("capture-" + type + "-input").click();
+    }
+
+    function handleCaptureFileInput(event, type) {
+      var file = event.target.files[0];
+      if (!file) {
+        toggleCameraFeed(type, 'cancel');
+        return;
+      }
+
+      var reader = new FileReader();
+      reader.onload = function (e) {
+        var rawBase64 = e.target.result;
+
+        // Show status loading toast
+        showStatusToast("Optimizing photo file size...", "success");
+
+        compressImage(rawBase64, 800, 0.7, function (compressedBase64) {
+          var video = document.getElementById("video-" + type);
+          var preview = document.getElementById("img-" + type + "-preview");
+          var placeholder = document.getElementById("placeholder-" + type);
+
+          var btnStart = document.getElementById("btn-" + type + "-start");
+          var btnCapture = document.getElementById("btn-" + type + "-capture");
+          var btnRetake = document.getElementById("btn-" + type + "-retake");
+
+          placeholder.classList.add("d-none");
+          video.classList.add("d-none");
+
+          preview.src = compressedBase64;
+          preview.classList.remove("d-none");
+
+          btnStart.classList.add("d-none");
+          btnCapture.classList.add("d-none");
+          btnRetake.classList.remove("d-none");
+
+          if (type === 'face') {
+            facePhotoBase64 = compressedBase64;
+            sessionStorage.setItem('ieee_face_photo', compressedBase64);
+          } else {
+            idPhotoBase64 = compressedBase64;
+            sessionStorage.setItem('ieee_id_photo', compressedBase64);
+          }
+
+          checkSubmissionStatusReady();
+          showStatusToast(type.toUpperCase() + " photo optimized & loaded.", "success");
+        });
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function compressImage(base64Str, maxWidth, quality, callback) {
+      var img = new Image();
+      img.src = base64Str;
+      img.onload = function () {
+        var canvas = document.createElement("canvas");
+        var width = img.width;
+        var height = img.height;
+
+        if (width > maxWidth) {
+          height = Math.round((height * maxWidth) / width);
+          width = maxWidth;
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+
+        var ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0, width, height);
+
+        var compressedBase64 = canvas.toDataURL("image/jpeg", quality);
+        callback(compressedBase64);
+      };
+    }
+
+    function checkSubmissionStatusReady() {
+      var isReady = scannedStudentId && facePhotoBase64 && idPhotoBase64;
+      document.getElementById("submit-att-btn").disabled = !isReady;
+    }
+
+    /* Submit attendance check-in logs */
+    function submitAttendanceRecord() {
+      var eventId = document.getElementById("vol-event-select").value;
+      var sessionName = document.getElementById("vol-session-select").value;
+      var session = getActiveSession();
+      if (!session || isSubmittingAtt) return;
+
+      var submitBtn = document.getElementById("submit-att-btn");
+      isSubmittingAtt = true;
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = `<span class="spinner-border spinner-border-sm text-white"></span> Submitting logs...`;
+
+      document.getElementById("vol-error-alert").classList.add("d-none");
+      document.getElementById("vol-success-alert").classList.add("d-none");
+
+      execApi(
+        'submitAttendance',
+        {
+          studentId: scannedStudentId,
+          eventId: eventId,
+          sessionName: sessionName,
+          facePhotoBase64: facePhotoBase64,
+          idPhotoBase64: idPhotoBase64,
+          volunteerUserId: session.userId
+        },
+        function(response) {
+          isSubmittingAtt = false;
+          submitBtn.innerHTML = `<i class="bi bi-send"></i> Submit Attendance`;
+
+          if (response.success) {
+            document.getElementById("vol-success-message").innerText = response.message;
+            document.getElementById("vol-success-alert").classList.remove("d-none");
+            resetScanningWorkflow();
+          } else {
+            submitBtn.disabled = false;
+            document.getElementById("vol-error-message").innerText = response.message;
+            document.getElementById("vol-error-alert").classList.remove("d-none");
+          }
+        },
+        function(err) {
+          isSubmittingAtt = false;
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = `<i class="bi bi-send"></i> Submit Attendance`;
+          document.getElementById("vol-error-message").innerText = "Connection lost: " + err.message;
+          document.getElementById("vol-error-alert").classList.remove("d-none");
+        }
+      );
+    }
+
+    /* Password Reset */
+    function openChangePasswordModal() {
+      document.getElementById("pass-form").reset();
+      document.getElementById("pass-error-alert").classList.add("d-none");
+      document.getElementById("pass-success-alert").classList.add("d-none");
+      passModalInstance.show();
+    }
+
+    function submitPasswordChange(e) {
+      e.preventDefault();
+
+      var oldP = document.getElementById("old-pass").value.trim();
+      var newP = document.getElementById("new-pass").value.trim();
+      var confP = document.getElementById("confirm-pass").value.trim();
+
+      var errorDiv = document.getElementById("pass-error-alert");
+      var errorMsg = document.getElementById("pass-error-msg");
+      var successDiv = document.getElementById("pass-success-alert");
+      var successMsg = document.getElementById("pass-success-msg");
+
+      var submitBtn = document.getElementById("pass-submit-btn");
+
+      errorDiv.classList.add("d-none");
+      successDiv.classList.add("d-none");
+
+      if (newP !== confP) {
+        errorMsg.innerText = "New passwords do not match.";
+        errorDiv.classList.remove("d-none");
+        return;
+      }
+
+      if (newP.length < 6) {
+        errorMsg.innerText = "Password must be at least 6 characters.";
+        errorDiv.classList.remove("d-none");
+        return;
+      }
+
+      submitBtn.disabled = true;
+      submitBtn.innerText = "Updating...";
+
+      var session = getActiveSession();
+      if (!session) return;
+
+      execApi(
+        'updatePassword',
+        { userId: session.userId, oldP: oldP, newP: newP, role: session.role },
+        function(response) {
+          submitBtn.disabled = false;
+          submitBtn.innerText = "Update Password";
+
+          if (response.success) {
+            successMsg.innerText = response.message;
+            successDiv.classList.remove("d-none");
+            document.getElementById("pass-form").reset();
+          } else {
+            errorMsg.innerText = response.message;
+            errorDiv.classList.remove("d-none");
+          }
+        },
+        function(err) {
+          submitBtn.disabled = false;
+          submitBtn.innerText = "Update Password";
+          errorMsg.innerText = "Server error: " + err.message;
+          errorDiv.classList.remove("d-none");
+        }
+      );
+    }
+  </script>
+</body>
+
+</html>
