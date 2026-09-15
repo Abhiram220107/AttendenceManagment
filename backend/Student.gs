@@ -69,9 +69,12 @@ function getStudentProfileData(userId) {
         var status = "Pending";
         var remarks = "";
         var hasAttended = false;
+        var evIdStr = String(ev.eventId || ev.eventid || "").trim();
         
         for (var a = 0; a < myAttendance.length; a++) {
-          if (myAttendance[a].eventId === ev.eventId && myAttendance[a].session && myAttendance[a].session.toString() === sessionName) {
+          var attEvId = String(myAttendance[a].eventId || myAttendance[a].eventid || "").trim();
+          var attSess = myAttendance[a].session ? myAttendance[a].session.toString().trim() : "";
+          if (attEvId === evIdStr && attSess === sessionName) {
             status = myAttendance[a].status;
             remarks = myAttendance[a].remarks || "";
             hasAttended = true;
@@ -82,7 +85,9 @@ function getStudentProfileData(userId) {
         if (!hasAttended) {
           var sessionDbStatus = "Locked"; // Default fallback
           for (var x = 0; x < sessionStatusesData.length; x++) {
-            if (sessionStatusesData[x].eventId === ev.eventId && sessionStatusesData[x].sessionName === sessionName) {
+            var sEvId = String(sessionStatusesData[x].eventId || sessionStatusesData[x].eventid || "").trim();
+            var sSessName = String(sessionStatusesData[x].sessionName || sessionStatusesData[x].sessionname || "").trim();
+            if (sEvId === evIdStr && sSessName === sessionName) {
               sessionDbStatus = sessionStatusesData[x].status;
               break;
             }

@@ -3,13 +3,6 @@
  */
 
 function doGet(e) {
-  // Ensure database tables exist
-  try {
-    initDatabase();
-  } catch (err) {
-    Logger.log("DB Init warning: " + err.message);
-  }
-
   // If page param is provided (for legacy GAS container viewing)
   var page = e && e.parameter && e.parameter.page ? e.parameter.page : 'index';
   var allowedPages = ['index', 'admin', 'volunteer', 'student'];
@@ -20,22 +13,16 @@ function doGet(e) {
   try {
     return HtmlService.createTemplateFromFile(page)
       .evaluate()
-      .setTitle('IEEE Event Attendance Management')
+      .setTitle('Attenza | Smart Event Attendance')
       .addMetaTag('viewport', 'width=device-width, initial-scale=1')
       .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
   } catch(err) {
-    return ContentService.createTextOutput(JSON.stringify({ status: "ok", message: "IEEE Event Attendance System API is running." }))
+    return ContentService.createTextOutput(JSON.stringify({ status: "ok", message: "Attenza Smart Event Attendance System API is running." }))
       .setMimeType(ContentService.MimeType.JSON);
   }
 }
 
 function doPost(e) {
-  try {
-    initDatabase();
-  } catch (err) {
-    Logger.log("DB Init warning: " + err.message);
-  }
-
   var response = { success: false, message: 'Invalid API request' };
 
   try {
@@ -49,69 +36,149 @@ function doPost(e) {
 
     switch(action) {
       case 'login':
-        response = handleLogin(payload.username, payload.password);
+      case 'verifyLoginCredentials':
+        response = verifyLoginCredentials(payload.username, payload.password);
         break;
+
       case 'updatePassword':
-        response = updateSessionPassword(payload.userId, payload.oldP, payload.newP, payload.role);
+      case 'updateSessionPassword':
+        response = updateSessionPassword(payload.userId, payload.oldP || payload.oldPassword, payload.newP || payload.newPassword, payload.role);
         break;
+
       case 'getVolunteerEvents':
+      case 'getAdminEvents':
+      case 'getVolunteerEventsList':
+      case 'getAdminEventsList':
         response = getVolunteerEventsList();
         break;
+
       case 'getActiveSession':
+      case 'getActiveSessionForEvent':
         response = getActiveSessionForEvent(payload.eventId);
         break;
+
       case 'scanQRToken':
+      case 'scanStudentQRToken':
         response = scanStudentQRToken(payload.qrToken);
         break;
+
       case 'submitAttendance':
-        response = submitStudentAttendanceLogs(payload);
+      case 'submitStudentAttendanceLogs':
+        response = submitStudentAttendanceLogs(
+          payload.studentId,
+          payload.eventId,
+          payload.sessionName,
+          payload.facePhotoBase64,
+          payload.idPhotoBase64,
+          payload.volunteerUserId
+        );
         break;
-      case 'getAdminMetrics':
-        response = getAdminDashboardMetrics();
-        break;
-      case 'getAdminEvents':
-        response = getAdminEventsList();
-        break;
-      case 'createEvent':
-        response = createEvent(payload.eventName, payload.eventDate);
-        break;
-      case 'deleteEvent':
-        response = deleteEvent(payload.eventId);
-        break;
-      case 'manageEventSessions':
-        response = manageEventSessions(payload.eventId, payload.actionType, payload.sessionName);
-        break;
-      case 'uploadStudentsBatch':
+
       case 'importParticipants':
+      case 'uploadStudentsBatch':
+      case 'importParticipantsFromExcelArray':
         response = importParticipantsFromExcelArray(payload.rows || payload.studentsList || []);
         break;
-      case 'getStudentsList':
-        response = getStudentsList();
-        break;
-      case 'getVolunteersList':
-        response = getVolunteersList();
-        break;
+
       case 'createVolunteer':
-        response = createVolunteer(payload);
+      case 'createVolunteerAccount':
+      case 'createNewVolunteer':
+        response = createVolunteerAccount(payload.name || payload.username, payload.username || payload.email, payload.password);
         break;
+
+      case 'createEvent':
+      case 'createNewEvent':
+        response = createEvent(payload.eventName, payload.eventDateStr || payload.eventDate, payload.sessionsCount || payload.sessions || 1);
+        break;
+
+      case 'deleteEvent':
+      case 'deleteEventById':
+        response = deleteEvent(payload.eventId);
+        break;
+
+      case 'deleteStudent':
+        response = deleteStudent(payload.studentId);
+        break;
+
       case 'deleteVolunteer':
-        response = deleteVolunteer(payload.vId);
+      case 'deleteVolunteerById':
+        response = deleteVolunteer(payload.volunteerId || payload.vId);
         break;
+
+      case 'getEventSessions':
+        response = getEventSessions(payload.eventId);
+        break;
+
+      case 'setSessionStatus':
+      case 'manageEventSessions':
+      case 'updateSessionStatus':
+        response = setSessionStatus(payload.eventId, payload.sessionName, payload.newStatus || payload.actionType);
+        break;
+
+      case 'getStudentsList':
+      case 'getAdminStudentsList':
+        response = getAdminStudentsList();
+        break;
+
+      case 'deduplicateSessionStatuses':
+      case 'cleanupSessionStatuses':
+        response = deduplicateSessionStatuses();
+        break;
+
+      case 'getVolunteersList':
+      case 'getAdminVolunteersList':
+        response = getAdminVolunteersList();
+        break;
+
       case 'getPendingVerifications':
-        response = getPendingVerificationsQueue();
+      case 'getPendingVerificationsQueue':
+        response = getPendingVerifications();
         break;
+
       case 'processVerification':
-        response = processVerificationDecision(payload.attId, payload.decision, payload.rejectionReason);
+      case 'processVerificationDecision':
+      case 'verifyAttendanceRecord':
+        response = verifyAttendanceRecord(
+          payload.attId || payload.attendanceId,
+          payload.decision || payload.status,
+          payload.rejectionReason || payload.remarks
+        );
         break;
+
+      case 'getReportStats':
+      case 'getAdminDashboardMetrics':
+        response = getReportStats(payload.eventId);
+        break;
+
       case 'getReportsMatrix':
-        response = getReportsAttendanceMatrix(payload.eventId);
+      case 'getAdminAttendanceRecords':
+      case 'getReportsAttendanceMatrix':
+        response = getAdminAttendanceRecords(payload.eventId);
         break;
+
       case 'getStudentProfile':
+      case 'getStudentProfileData':
         response = getStudentProfileData(payload.userId);
         break;
+
       case 'getStudentAttendanceHistory':
         response = getStudentAttendanceHistory(payload.registrationNumber);
         break;
+
+      case 'markManualAttendance':
+        response = markManualAttendance(
+          payload.studentId,
+          payload.registrationNumber,
+          payload.studentName,
+          payload.department,
+          payload.eventId,
+          payload.eventName,
+          payload.sessionName,
+          payload.reason,
+          payload.adminId
+        );
+        break;
+
       default:
         response = { success: false, message: 'Unknown API action: ' + action };
     }

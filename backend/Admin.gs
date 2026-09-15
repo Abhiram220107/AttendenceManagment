@@ -252,10 +252,11 @@ function deleteEvent(eventId) {
     var eventSheet = ss.getSheetByName("Events");
     if (!eventSheet) return { success: false, message: "Events sheet not found." };
     
+    var targetIdStr = String(eventId).trim();
     var eventData = eventSheet.getDataRange().getValues();
     var eventRowToDelete = -1;
     for (var i = 1; i < eventData.length; i++) { // Skip header row
-      if (eventData[i][0] === eventId) { // eventId is the first column
+      if (String(eventData[i][0]).trim() === targetIdStr) { // eventId is the first column
         eventRowToDelete = i + 1; // 1-based index
         break;
       }
@@ -273,7 +274,7 @@ function deleteEvent(eventId) {
       var attData = attSheet.getDataRange().getValues();
       // Iterate backwards when deleting multiple rows
       for (var j = attData.length - 1; j >= 1; j--) {
-        if (attData[j][5] === eventId) { // eventId is the 6th column (index 5)
+        if (String(attData[j][5]).trim() === targetIdStr) { // eventId is the 6th column (index 5)
           attSheet.deleteRow(j + 1);
         }
       }
@@ -284,7 +285,7 @@ function deleteEvent(eventId) {
     if (sessSheet) {
       var sessData = sessSheet.getDataRange().getValues();
       for (var k = sessData.length - 1; k >= 1; k--) {
-        if (sessData[k][0] === eventId) {
+        if (String(sessData[k][0]).trim() === targetIdStr) {
           sessSheet.deleteRow(k + 1);
         }
       }
@@ -307,7 +308,7 @@ function deleteStudent(studentId) {
     var studentData = studentSheet.getDataRange().getValues();
     var studentRowToDelete = -1;
     for (var i = 1; i < studentData.length; i++) { // Skip header row
-      if (studentData[i][0] === studentId) { // studentId is the first column
+      if (String(studentData[i][0]).trim() === String(studentId).trim()) { // studentId is the first column
         studentRowToDelete = i + 1; // 1-based index
         break;
       }
@@ -325,7 +326,7 @@ function deleteStudent(studentId) {
       var attData = attSheet.getDataRange().getValues();
       // Iterate backwards when deleting multiple rows
       for (var j = attData.length - 1; j >= 1; j--) {
-        if (attData[j][1] === studentId) { // studentId is the 2nd column (index 1)
+        if (String(attData[j][1]).trim() === String(studentId).trim()) { // studentId is the 2nd column (index 1)
           attSheet.deleteRow(j + 1);
         }
       }
@@ -339,11 +340,72 @@ function deleteStudent(studentId) {
 
 function getEventSessions(eventId) {
   try {
+    var targetIdStr = String(eventId).trim();
     var allSessions = getSheetDataAsJson("SessionStatuses");
+
+    // Auto-clean duplicate rows if sheet has ballooned
+    if (allSessions.length > 50) {
+      deduplicateSessionStatuses();
+      allSessions = getSheetDataAsJson("SessionStatuses");
+    }
+
     var filtered = allSessions.filter(function(s) {
-      return s.eventId === eventId;
+      var sId = String(s.eventId || s.eventid || s["event id"] || "").trim();
+      return sId === targetIdStr;
     });
-    return { success: true, sessions: filtered };
+
+    var uniqueSessions = [];
+    var seenSess = {};
+    filtered.forEach(function(s) {
+      var sName = String(s.sessionName || s.sessionname || s["session name"] || "").trim();
+      if (!seenSess[sName]) {
+        seenSess[sName] = true;
+        uniqueSessions.push(s);
+      }
+    });
+
+    // Auto-healing fallback: If no sessions found in SessionStatuses for this event, auto-create them
+    if (uniqueSessions.length === 0) {
+      var ss = getSpreadsheet();
+      var events = getSheetDataAsJson("Events");
+      var targetEv = null;
+      for (var i = 0; i < events.length; i++) {
+        var evId = String(events[i].eventId || events[i].eventid || events[i]["event id"] || "").trim();
+        if (evId === targetIdStr) {
+          targetEv = events[i];
+          break;
+        }
+      }
+
+      if (targetEv) {
+        var countVal = parseInt(targetEv.sessionsCount || targetEv.sessionscount || targetEv["sessions count"]) || 1;
+        var sessionStatusesSheet = ss.getSheetByName("SessionStatuses");
+        if (sessionStatusesSheet) {
+          var realEvId = targetEv.eventId || targetEv.eventid || eventId;
+          for (var s = 1; s <= countVal; s++) {
+            var sessName = "Session " + s;
+            sessionStatusesSheet.appendRow([realEvId, sessName, "Locked"]);
+          }
+          // Re-fetch after auto-seeding
+          allSessions = getSheetDataAsJson("SessionStatuses");
+          filtered = allSessions.filter(function(s) {
+            var sId = String(s.eventId || s.eventid || s["event id"] || "").trim();
+            return sId === targetIdStr;
+          });
+          uniqueSessions = [];
+          seenSess = {};
+          filtered.forEach(function(s) {
+            var sName = String(s.sessionName || s.sessionname || s["session name"] || "").trim();
+            if (!seenSess[sName]) {
+              seenSess[sName] = true;
+              uniqueSessions.push(s);
+            }
+          });
+        }
+      }
+    }
+
+    return { success: true, sessions: uniqueSessions };
   } catch (e) {
     return { success: false, message: e.message };
   }
@@ -356,18 +418,30 @@ function setSessionStatus(eventId, sessionName, newStatus) {
     if (!sheet) return { success: false, message: "SessionStatuses sheet not found." };
     
     var data = sheet.getDataRange().getValues();
-    var targetRowIndex = -1;
+    if (data.length > 50) {
+      deduplicateSessionStatuses();
+      data = sheet.getDataRange().getValues();
+    }
+
+    var targetIdStr = String(eventId).trim();
+    var targetSessStr = String(sessionName).trim();
     
     // Enforce the rule that only one session can be Open system-wide at any time
     if (newStatus === "Open") {
       for (var i = 1; i < data.length; i++) {
-        if (data[i][2] === "Open") {
-          var openEventId = data[i][0];
-          var openSessionName = data[i][1];
+        if (String(data[i][2]).trim() === "Open") {
+          var openEventId = String(data[i][0]).trim();
+          var openSessionName = String(data[i][1]).trim();
+          
+          // Skip if it is already this exact session
+          if (openEventId === targetIdStr && openSessionName === targetSessStr) {
+            continue;
+          }
+          
           var events = getSheetDataAsJson("Events");
           var openEventName = "Another Event";
           for (var k = 0; k < events.length; k++) {
-            if (events[k].eventId === openEventId) {
+            if (String(events[k].eventId || events[k].eventid || "").trim() === openEventId) {
               openEventName = events[k].eventName;
               break;
             }
@@ -380,18 +454,18 @@ function setSessionStatus(eventId, sessionName, newStatus) {
       }
     }
     
+    var foundAny = false;
     for (var i = 1; i < data.length; i++) {
-      if (data[i][0] === eventId && data[i][1] === sessionName) {
-        targetRowIndex = i + 1; // 1-based row index
-        break;
+      if (String(data[i][0]).trim() === targetIdStr && String(data[i][1]).trim() === targetSessStr) {
+        sheet.getRange(i + 1, 3).setValue(newStatus);
+        foundAny = true;
       }
     }
     
-    if (targetRowIndex === -1) {
-      return { success: false, message: "Session not found." };
+    if (!foundAny) {
+      sheet.appendRow([eventId, sessionName, newStatus]);
     }
     
-    sheet.getRange(targetRowIndex, 3).setValue(newStatus); // Status is column 3
     return { success: true, message: sessionName + " status updated to " + newStatus + "." };
   } catch (e) {
     return { success: false, message: e.message };

@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 48" width="200" height="48" fill="none">
+  <!-- Icon Mark -->
+  <g transform="translate(4, 4)">
+    <!-- QR Corner TL -->
+    <path d="M 4 12 V 4 H 12" stroke="#FF7A00" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <!-- QR Corner BR -->
+    <path d="M 36 28 V 36 H 28" stroke="#FF7A00" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+    
+    <!-- Letter A legs -->
+    <path d="M 8 34 L 20 6 L 32 34" stroke="#1E1E1E" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+    
+    <!-- Checkmark stroke crossing the 'A' -->
+    <path d="M 12 24 L 18 30 L 34 14" stroke="#FF7A00" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  
+  <!-- Text Brand -->
+  <text x="52" y="29" font-family="system-ui, -apple-system, 'Outfit', 'Inter', sans-serif" font-weight="800" font-size="24" fill="#1E1E1E" letter-spacing="-0.5">Attenza</text>
+  <!-- Subtitle -->
+  <text x="53" y="41" font-family="system-ui, -apple-system, 'Outfit', 'Inter', sans-serif" font-weight="600" font-size="8.5" fill="#FF7A00" letter-spacing="1.2">SMART ATTENDANCE</text>
+</svg>

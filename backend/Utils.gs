@@ -144,30 +144,85 @@ function initDatabase() {
     Logger.log("Seeded default admin successfully.");
   }
   
-  // Auto-migration: Seed SessionStatuses for any events that don't have them
-  var eventsSheet = ss.getSheetByName("Events");
-  if (eventsSheet && eventsSheet.getLastRow() > 1) {
-    var events = getSheetDataAsJson("Events");
-    var sessionStatuses = getSheetDataAsJson("SessionStatuses");
+  // Seed SessionStatuses only if SessionStatuses sheet is empty (only header row exists)
+  var sessionStatusesSheet = ss.getSheetByName("SessionStatuses");
+  if (sessionStatusesSheet && sessionStatusesSheet.getLastRow() === 1) {
+    var eventsSheet = ss.getSheetByName("Events");
+    if (eventsSheet && eventsSheet.getLastRow() > 1) {
+      var events = getSheetDataAsJson("Events");
+      events.forEach(function(ev) {
+        var eId = String(ev.eventId || ev.eventid || ev["event id"] || "").trim();
+        var sessionsCount = parseInt(ev.sessionsCount || ev.sessionscount || ev["sessions count"]) || 1;
+        for (var s = 1; s <= sessionsCount; s++) {
+          var sessionName = "Session " + s;
+          if (eId) {
+            sessionStatusesSheet.appendRow([ev.eventId || eId, sessionName, "Locked"]);
+          }
+        }
+      });
+    }
+  }
+
+  return "Database initialized successfully.";
+}
+
+/**
+ * Utility to clean up duplicate entries in SessionStatuses sheet.
+ * Retains only 1 row per eventId + sessionName, keeping Open/Closed status if set.
+ */
+function deduplicateSessionStatuses() {
+  try {
+    var ss = getSpreadsheet();
+    var sheet = ss.getSheetByName("SessionStatuses");
+    if (!sheet) return { success: false, message: "SessionStatuses sheet not found." };
     
-    var existingSet = {};
-    sessionStatuses.forEach(function(s) {
-      existingSet[s.eventId + "_" + s.sessionName] = true;
-    });
+    var lastRow = sheet.getLastRow();
+    if (lastRow <= 1) return { success: true, message: "SessionStatuses sheet is empty." };
     
-    events.forEach(function(ev) {
-      var sessionsCount = parseInt(ev.sessionsCount) || 1;
-      for (var s = 1; s <= sessionsCount; s++) {
-        var sessionName = "Session " + s;
-        var key = ev.eventId + "_" + sessionName;
-        if (!existingSet[key]) {
-          sessionStatusesSheet.appendRow([ev.eventId, sessionName, "Locked"]);
+    var data = sheet.getDataRange().getValues();
+    var headers = data[0];
+    var uniqueMap = {};
+    var countBefore = data.length - 1;
+    
+    for (var i = 1; i < data.length; i++) {
+      var evId = String(data[i][0]).trim();
+      var sessName = String(data[i][1]).trim();
+      var status = String(data[i][2]).trim();
+      
+      if (!evId || !sessName) continue;
+      
+      var key = evId.toLowerCase() + "_" + sessName.toLowerCase();
+      if (!uniqueMap[key]) {
+        uniqueMap[key] = { eventId: data[i][0], sessionName: data[i][1], status: status };
+      } else {
+        // Prioritize 'Open' > 'Closed' > 'Locked'
+        if (status === "Open") {
+          uniqueMap[key].status = "Open";
+        } else if (status === "Closed" && uniqueMap[key].status !== "Open") {
+          uniqueMap[key].status = "Closed";
         }
       }
-    });
+    }
+    
+    sheet.clearContents();
+    sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
+    
+    var newRows = [];
+    for (var k in uniqueMap) {
+      newRows.push([uniqueMap[k].eventId, uniqueMap[k].sessionName, uniqueMap[k].status]);
+    }
+    
+    if (newRows.length > 0) {
+      sheet.getRange(2, 1, newRows.length, 3).setValues(newRows);
+    }
+    
+    return {
+      success: true,
+      message: "Deduplicated SessionStatuses table from " + countBefore + " rows down to " + newRows.length + " unique session rows."
+    };
+  } catch (e) {
+    return { success: false, message: "Error deduplicating: " + e.message };
   }
-  
-  return "Database initialized successfully.";
 }
 
 /**

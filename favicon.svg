@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" fill="none">
+  <rect width="32" height="32" rx="7" fill="#1E1E1E"/>
+  <g transform="translate(1, 1)">
+    <!-- QR Corner TL -->
+    <path d="M 3 9 V 3 H 9" stroke="#FF7A00" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    <!-- QR Corner BR -->
+    <path d="M 27 21 V 27 H 21" stroke="#FF7A00" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    
+    <!-- Letter A legs -->
+    <path d="M 6 25 L 15 5 L 24 25" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+    
+    <!-- Checkmark stroke crossing the 'A' -->
+    <path d="M 9 18 L 13.5 22.5 L 25 11" stroke="#FF7A00" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+</svg>
