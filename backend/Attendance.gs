@@ -35,7 +35,7 @@ function submitStudentAttendanceLogs(studentId, eventId, sessionName, facePhotoB
     if (!attendanceSheet) return { success: false, message: "Attendance sheet database not found." };
     
     // 0. Validate that the session is Open
-    var sessionStatusesSheet = ss.getSheetByName("SessionStatuses");
+    var sessionStatusesSheet = getOrCreateSheet(ss, "SessionStatuses", ["eventId", "sessionName", "status"]);
     var isSessionOpen = false;
     var targetEvIdStr = String(eventId).trim();
     var targetSessStr = String(sessionName).trim();
@@ -162,8 +162,7 @@ function verifyAttendanceRecord(attendanceId, status, remarks) {
 function getActiveSessionForEvent(eventId) {
   try {
     var ss = getSpreadsheet();
-    var sheet = ss.getSheetByName("SessionStatuses");
-    if (!sheet) return { success: false, message: "SessionStatuses sheet not found." };
+    var sheet = getOrCreateSheet(ss, "SessionStatuses", ["eventId", "sessionName", "status"]);
     
     var targetEvIdStr = String(eventId).trim();
     var data = sheet.getDataRange().getValues();

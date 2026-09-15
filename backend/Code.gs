@@ -109,6 +109,11 @@ function doPost(e) {
         response = getEventSessions(payload.eventId);
         break;
 
+      case 'addEventSession':
+      case 'addSession':
+        response = addEventSession(payload.eventId, payload.sessionName);
+        break;
+
       case 'setSessionStatus':
       case 'manageEventSessions':
       case 'updateSessionStatus':

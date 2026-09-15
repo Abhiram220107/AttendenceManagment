@@ -123,16 +123,52 @@ function createEvent(eventName, eventDateStr, sessionsCount) {
     ]);
     
     // Seed Locked session statuses
-    var sessionStatusesSheet = ss.getSheetByName("SessionStatuses");
-    if (sessionStatusesSheet) {
-      for (var s = 1; s <= countVal; s++) {
-        sessionStatusesSheet.appendRow([eventId, "Session " + s, "Locked"]);
-      }
+    var sessionStatusesSheet = getOrCreateSheet(ss, "SessionStatuses", ["eventId", "sessionName", "status"]);
+    for (var s = 1; s <= countVal; s++) {
+      sessionStatusesSheet.appendRow([eventId, "Session " + s, "Locked"]);
     }
     
     return { success: true, message: "Event created successfully with " + countVal + " sessions." };
   } catch (e) {
     return { success: false, message: "Error creating event: " + e.message };
+  }
+}
+
+function addEventSession(eventId, sessionName) {
+  try {
+    var ss = getSpreadsheet();
+    var sheet = getOrCreateSheet(ss, "SessionStatuses", ["eventId", "sessionName", "status"]);
+    var targetIdStr = String(eventId).trim();
+    var targetSessStr = String(sessionName || "").trim();
+    if (!targetSessStr) {
+      return { success: false, message: "Session name cannot be empty." };
+    }
+    
+    var data = sheet.getDataRange().getValues();
+    for (var i = 1; i < data.length; i++) {
+      if (String(data[i][0]).trim() === targetIdStr && String(data[i][1]).trim().toLowerCase() === targetSessStr.toLowerCase()) {
+        return { success: false, message: "A session named '" + targetSessStr + "' already exists for this event." };
+      }
+    }
+    
+    sheet.appendRow([targetIdStr, targetSessStr, "Locked"]);
+    
+    // Update count in Events sheet if present
+    var eventSheet = ss.getSheetByName("Events");
+    if (eventSheet) {
+      var evData = eventSheet.getDataRange().getValues();
+      for (var e = 1; e < evData.length; e++) {
+        if (String(evData[e][0]).trim() === targetIdStr) {
+          var curCount = parseInt(evData[e][3]) || 0;
+          eventSheet.getRange(e + 1, 4).setValue(curCount + 1);
+          break;
+        }
+      }
+    }
+    
+    return { success: true, message: "Session '" + targetSessStr + "' added successfully." };
+  } catch (e) {
+    return { success: false, message: "Error adding session: " + e.message };
   }
 }
 
@@ -340,6 +376,9 @@ function deleteStudent(studentId) {
 
 function getEventSessions(eventId) {
   try {
+    var ss = getSpreadsheet();
+    var sessionStatusesSheet = getOrCreateSheet(ss, "SessionStatuses", ["eventId", "sessionName", "status"]);
+    
     var targetIdStr = String(eventId).trim();
     var allSessions = getSheetDataAsJson("SessionStatuses");
 
@@ -366,7 +405,6 @@ function getEventSessions(eventId) {
 
     // Auto-healing fallback: If no sessions found in SessionStatuses for this event, auto-create them
     if (uniqueSessions.length === 0) {
-      var ss = getSpreadsheet();
       var events = getSheetDataAsJson("Events");
       var targetEv = null;
       for (var i = 0; i < events.length; i++) {
@@ -377,31 +415,20 @@ function getEventSessions(eventId) {
         }
       }
 
+      var countVal = 1;
       if (targetEv) {
-        var countVal = parseInt(targetEv.sessionsCount || targetEv.sessionscount || targetEv["sessions count"]) || 1;
-        var sessionStatusesSheet = ss.getSheetByName("SessionStatuses");
-        if (sessionStatusesSheet) {
-          var realEvId = targetEv.eventId || targetEv.eventid || eventId;
-          for (var s = 1; s <= countVal; s++) {
-            var sessName = "Session " + s;
-            sessionStatusesSheet.appendRow([realEvId, sessName, "Locked"]);
-          }
-          // Re-fetch after auto-seeding
-          allSessions = getSheetDataAsJson("SessionStatuses");
-          filtered = allSessions.filter(function(s) {
-            var sId = String(s.eventId || s.eventid || s["event id"] || "").trim();
-            return sId === targetIdStr;
-          });
-          uniqueSessions = [];
-          seenSess = {};
-          filtered.forEach(function(s) {
-            var sName = String(s.sessionName || s.sessionname || s["session name"] || "").trim();
-            if (!seenSess[sName]) {
-              seenSess[sName] = true;
-              uniqueSessions.push(s);
-            }
-          });
-        }
+        countVal = parseInt(targetEv.sessionsCount || targetEv.sessionscount || targetEv["sessions count"]) || 1;
+      }
+      var realEvId = (targetEv && (targetEv.eventId || targetEv.eventid)) || targetIdStr;
+
+      for (var s = 1; s <= countVal; s++) {
+        var sessName = "Session " + s;
+        sessionStatusesSheet.appendRow([realEvId, sessName, "Locked"]);
+        uniqueSessions.push({
+          eventId: realEvId,
+          sessionName: sessName,
+          status: "Locked"
+        });
       }
     }
 
@@ -414,8 +441,7 @@ function getEventSessions(eventId) {
 function setSessionStatus(eventId, sessionName, newStatus) {
   try {
     var ss = getSpreadsheet();
-    var sheet = ss.getSheetByName("SessionStatuses");
-    if (!sheet) return { success: false, message: "SessionStatuses sheet not found." };
+    var sheet = getOrCreateSheet(ss, "SessionStatuses", ["eventId", "sessionName", "status"]);
     
     var data = sheet.getDataRange().getValues();
     if (data.length > 50) {
