@@ -178,6 +178,106 @@
             </div>
           </div>
 
+          <!-- Cloud Storage & Google Drive Assets -->
+          <div class="card border border-slate-200 bg-white p-4 mb-4">
+            <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-3">
+              <div>
+                <h3 class="fs-6 font-bold mb-1 d-flex align-items-center gap-2">
+                  <i class="bi bi-cloud-arrow-up-fill text-primary"></i> Cloud Storage & Google Drive Assets
+                </h3>
+                <p class="text-muted small mb-0">Live attendance verification photos, ID cards, and QR badge assets</p>
+              </div>
+              <div class="d-flex align-items-center gap-2">
+                <span id="drive-storage-badge" class="badge bg-light text-primary border border-primary px-3 py-2 fw-semibold">
+                  <span class="spinner-border spinner-border-sm me-1" role="status"></span> Calculating Storage...
+                </span>
+                <button onclick="loadDriveStorageMetrics()" class="btn btn-outline-secondary btn-sm" title="Refresh storage metrics">
+                  <i class="bi bi-arrow-clockwise"></i> Refresh
+                </button>
+              </div>
+            </div>
+
+            <div class="row g-3">
+              <!-- Face Photos Folder -->
+              <div class="col-12 col-md-4">
+                <div class="p-3 border rounded-3 bg-light d-flex flex-column justify-content-between h-100">
+                  <div class="d-flex align-items-start justify-content-between mb-2">
+                    <div class="d-flex align-items-center gap-2">
+                      <div class="p-2 rounded bg-primary bg-opacity-10 text-primary">
+                        <i class="bi bi-camera-fill fs-5"></i>
+                      </div>
+                      <div>
+                        <h6 class="fw-bold mb-0">Face Photos</h6>
+                        <small class="text-muted" id="drive-face-count">0 files</small>
+                      </div>
+                    </div>
+                    <span class="badge bg-white text-dark border small" id="drive-face-size">0 MB</span>
+                  </div>
+                  <div class="mt-3">
+                    <a href="https://drive.google.com/drive/folders/1F5O3gpB-Zd4NJXnW4WRtd4pQKy6D_GOq" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-primary w-100 font-semibold">
+                      <i class="bi bi-box-arrow-up-right me-1"></i> Open in Drive
+                    </a>
+                  </div>
+                </div>
+              </div>
+
+              <!-- ID Photos Folder -->
+              <div class="col-12 col-md-4">
+                <div class="p-3 border rounded-3 bg-light d-flex flex-column justify-content-between h-100">
+                  <div class="d-flex align-items-start justify-content-between mb-2">
+                    <div class="d-flex align-items-center gap-2">
+                      <div class="p-2 rounded bg-success bg-opacity-10 text-success">
+                        <i class="bi bi-person-badge-fill fs-5"></i>
+                      </div>
+                      <div>
+                        <h6 class="fw-bold mb-0">ID Card Photos</h6>
+                        <small class="text-muted" id="drive-id-count">0 files</small>
+                      </div>
+                    </div>
+                    <span class="badge bg-white text-dark border small" id="drive-id-size">0 MB</span>
+                  </div>
+                  <div class="mt-3">
+                    <a href="https://drive.google.com/drive/folders/1-uaBjM9fhKxbG1yLCpRDzGKRCZ49YRkI" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-success w-100 font-semibold">
+                      <i class="bi bi-box-arrow-up-right me-1"></i> Open in Drive
+                    </a>
+                  </div>
+                </div>
+              </div>
+
+              <!-- QR Badges Folder -->
+              <div class="col-12 col-md-4">
+                <div class="p-3 border rounded-3 bg-light d-flex flex-column justify-content-between h-100">
+                  <div class="d-flex align-items-start justify-content-between mb-2">
+                    <div class="d-flex align-items-center gap-2">
+                      <div class="p-2 rounded bg-warning bg-opacity-10 text-warning">
+                        <i class="bi bi-qr-code fs-5"></i>
+                      </div>
+                      <div>
+                        <h6 class="fw-bold mb-0">QR Badges</h6>
+                        <small class="text-muted" id="drive-qr-count">0 files</small>
+                      </div>
+                    </div>
+                    <span class="badge bg-white text-dark border small" id="drive-qr-size">0 MB</span>
+                  </div>
+                  <div class="mt-3">
+                    <a href="https://drive.google.com/drive/folders/1OcXSmEsQdnrtw94L7kir9BClvCSVL_at" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-warning w-100 font-semibold">
+                      <i class="bi bi-box-arrow-up-right me-1"></i> Open in Drive
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="mt-3 pt-3 border-top d-flex flex-wrap align-items-center justify-content-between gap-2">
+              <span class="text-muted small">
+                <i class="bi bi-folder-symlink me-1"></i> Root Storage Parent: <code class="text-dark">17zD7-zgbK1T6M50cAV2w6hISXzik4DtT</code>
+              </span>
+              <a href="https://drive.google.com/drive/folders/17zD7-zgbK1T6M50cAV2w6hISXzik4DtT" target="_blank" rel="noopener noreferrer" class="btn btn-link btn-sm text-decoration-none p-0 fw-semibold text-primary">
+                Open Root Drive Folder <i class="bi bi-arrow-right"></i>
+              </a>
+            </div>
+          </div>
+
           <!-- Quick shortcuts -->
           <div class="card border border-slate-200 bg-white p-4">
             <h3 class="fs-6 font-bold mb-3">Quick Navigation Shortcuts</h3>
@@ -982,13 +1082,63 @@
       document.getElementById('sidebar').classList.remove('open');
 
       // Fetch dynamic panel data
-      if (panelId === 'dashboard') loadEventsDropdowns();
+      if (panelId === 'dashboard') {
+        loadEventsDropdowns();
+        loadDriveStorageMetrics();
+      }
       else if (panelId === 'events') fetchEventsList();
       else if (panelId === 'students') fetchStudentsList();
       else if (panelId === 'volunteers') fetchVolunteersList();
       else if (panelId === 'verification') loadVerificationQueue();
       else if (panelId === 'reports') loadReportsDropdowns();
       else if (panelId === 'emergency') loadEmergencyPanel();
+    }
+
+    /**
+     * Fetch real-time Google Drive storage metrics
+     */
+    function loadDriveStorageMetrics() {
+      var badge = document.getElementById("drive-storage-badge");
+      if (badge) {
+        badge.innerHTML = `<span class="spinner-border spinner-border-sm me-1"></span> Calculating Storage...`;
+      }
+
+      execApi(
+        'getDriveStorageStats',
+        {},
+        function(res) {
+          if (res.success) {
+            if (badge) {
+              badge.innerHTML = `<i class="bi bi-hdd-network me-1"></i> Total: ${res.totalSizeFormatted} (${res.totalCount} files)`;
+            }
+            if (res.folders) {
+              if (res.folders.face) {
+                var faceCount = document.getElementById("drive-face-count");
+                var faceSize = document.getElementById("drive-face-size");
+                if (faceCount) faceCount.innerText = res.folders.face.count + " files";
+                if (faceSize) faceSize.innerText = res.folders.face.sizeFormatted;
+              }
+              if (res.folders.idCard) {
+                var idCount = document.getElementById("drive-id-count");
+                var idSize = document.getElementById("drive-id-size");
+                if (idCount) idCount.innerText = res.folders.idCard.count + " files";
+                if (idSize) idSize.innerText = res.folders.idCard.sizeFormatted;
+              }
+              if (res.folders.qr) {
+                var qrCount = document.getElementById("drive-qr-count");
+                var qrSize = document.getElementById("drive-qr-size");
+                if (qrCount) qrCount.innerText = res.folders.qr.count + " files";
+                if (qrSize) qrSize.innerText = res.folders.qr.sizeFormatted;
+              }
+            }
+          } else {
+            if (badge) badge.innerText = "Storage Active";
+          }
+        },
+        function(err) {
+          if (badge) badge.innerText = "Storage Active";
+        }
+      );
     }
 
     // ==========================================

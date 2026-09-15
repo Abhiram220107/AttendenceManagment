@@ -130,6 +130,11 @@ function doPost(e) {
         response = deduplicateSessionStatuses();
         break;
 
+      case 'getDriveStorageStats':
+      case 'getStorageStats':
+        response = getDriveStorageStats();
+        break;
+
       case 'getVolunteersList':
       case 'getAdminVolunteersList':
         response = getAdminVolunteersList();

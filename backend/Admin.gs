@@ -498,3 +498,88 @@ function setSessionStatus(eventId, sessionName, newStatus) {
     return { success: false, message: e.message };
   }
 }
+
+/**
+ * Calculate Google Drive storage metrics and folder links
+ */
+function getDriveStorageStats() {
+  try {
+    function getFolderStats(folderId, defaultName) {
+      var stats = { count: 0, sizeBytes: 0, url: "#", name: defaultName };
+      if (!folderId) return stats;
+      try {
+        var folder = DriveApp.getFolderById(folderId);
+        stats.name = folder.getName();
+        stats.url = folder.getUrl();
+        
+        var files = folder.getFiles();
+        while (files.hasNext()) {
+          var f = files.next();
+          stats.count++;
+          stats.sizeBytes += f.getSize();
+        }
+        
+        var subFolders = folder.getFolders();
+        while (subFolders.hasNext()) {
+          var sf = subFolders.next();
+          var subFiles = sf.getFiles();
+          while (subFiles.hasNext()) {
+            var subF = subFiles.next();
+            stats.count++;
+            stats.sizeBytes += subF.getSize();
+          }
+        }
+      } catch (err) {
+        Logger.log("Error reading folder " + folderId + ": " + err.message);
+      }
+      return stats;
+    }
+
+    function formatBytes(bytes) {
+      if (!bytes || bytes === 0) return "0 MB";
+      var mb = bytes / (1024 * 1024);
+      if (mb >= 1024) {
+        return (mb / 1024).toFixed(2) + " GB";
+      }
+      return mb.toFixed(2) + " MB";
+    }
+
+    var faceStats = getFolderStats(FACE_PHOTOS_FOLDER_ID, "Face Photos");
+    var idStats = getFolderStats(ID_PHOTOS_FOLDER_ID, "ID Photos");
+    var qrStats = getFolderStats(QR_CODES_FOLDER_ID, "QR Codes");
+    var parentFolderUrl = DB_PARENT_FOLDER_ID ? ("https://drive.google.com/drive/folders/" + DB_PARENT_FOLDER_ID) : "https://drive.google.com";
+
+    var totalBytes = faceStats.sizeBytes + idStats.sizeBytes + qrStats.sizeBytes;
+    var totalCount = faceStats.count + idStats.count + qrStats.count;
+
+    return {
+      success: true,
+      totalCount: totalCount,
+      totalSizeBytes: totalBytes,
+      totalSizeFormatted: formatBytes(totalBytes),
+      parentFolderUrl: parentFolderUrl,
+      folders: {
+        face: {
+          name: "Face Photos",
+          count: faceStats.count,
+          sizeFormatted: formatBytes(faceStats.sizeBytes),
+          url: faceStats.url || ("https://drive.google.com/drive/folders/" + FACE_PHOTOS_FOLDER_ID)
+        },
+        idCard: {
+          name: "ID Card Photos",
+          count: idStats.count,
+          sizeFormatted: formatBytes(idStats.sizeBytes),
+          url: idStats.url || ("https://drive.google.com/drive/folders/" + ID_PHOTOS_FOLDER_ID)
+        },
+        qr: {
+          name: "QR Badges",
+          count: qrStats.count,
+          sizeFormatted: formatBytes(qrStats.sizeBytes),
+          url: qrStats.url || ("https://drive.google.com/drive/folders/" + QR_CODES_FOLDER_ID)
+        }
+      }
+    };
+  } catch (e) {
+    return { success: false, message: "Error calculating drive storage: " + e.message };
+  }
+}

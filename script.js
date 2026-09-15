@@ -54,6 +54,7 @@ function callBackendApi(action, payload) {
         case 'getReportsMatrix': runner.getAdminAttendanceRecords(payload.eventId); break;
         case 'getStudentProfile': runner.getStudentProfileData(payload.userId); break;
         case 'markManualAttendance': runner.markManualAttendance(payload.studentId, payload.registrationNumber, payload.studentName, payload.department, payload.eventId, payload.eventName, payload.sessionName, payload.reason, payload.adminId); break;
+        case 'getDriveStorageStats': runner.getDriveStorageStats(); break;
         default: reject(new Error("Unknown GAS runner action: " + action));
       }
       return;
