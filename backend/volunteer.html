@@ -53,8 +53,11 @@
 
         <div class="row g-3">
           <div class="col-sm-6">
-            <label class="form-label font-bold text-sm">Target Event</label>
-            <select id="vol-event-select" onchange="detectActiveSession()" class="form-select border border-slate-200">
+            <div class="d-flex align-items-center justify-content-between mb-1">
+              <label class="form-label font-bold text-sm mb-0">Target Event</label>
+              <span id="vol-event-photo-badge" class="badge bg-secondary ms-1">Checking photos mode...</span>
+            </div>
+            <select id="vol-event-select" onchange="onTargetEventChange()" class="form-select border border-slate-200">
               <option value="">Loading events...</option>
             </select>
           </div>
@@ -147,12 +150,12 @@
         </div>
 
         <!-- Split screen WebRTC capturing cards -->
-        <div class="row mb-4">
+        <div class="row mb-4" id="photo-capture-row">
 
           <!-- Column 1: Face Capture -->
-          <div class="col-md-6 mb-3">
+          <div class="col-md-6 mb-3" id="col-face-capture">
             <div class="card border border-slate-200 p-3 bg-white text-center">
-              <span class="text-xs text-muted font-bold uppercase tracking-wider block mb-2">Step 1: Capture Face
+              <span class="text-xs text-muted font-bold uppercase tracking-wider block mb-2" id="label-face-step">Step 1: Capture Face
                 Photo</span>
               <div class="camera-viewport mb-3">
                 <video id="video-face" class="camera-feed d-none" autoplay playsinline muted></video>
@@ -179,9 +182,9 @@
           </div>
 
           <!-- Column 2: ID Card Capture -->
-          <div class="col-md-6 mb-3">
+          <div class="col-md-6 mb-3" id="col-id-capture">
             <div class="card border border-slate-200 p-3 bg-white text-center">
-              <span class="text-xs text-muted font-bold uppercase tracking-wider block mb-2">Step 2: Capture ID Card
+              <span class="text-xs text-muted font-bold uppercase tracking-wider block mb-2" id="label-id-step">Step 2: Capture ID Card
                 Photo</span>
               <div class="camera-viewport mb-3">
                 <video id="video-id" class="camera-feed d-none" autoplay playsinline muted></video>
@@ -203,6 +206,17 @@
                   class="btn btn-success btn-sm flex-grow-1 font-bold d-none">Capture Frame</button>
                 <button type="button" id="btn-id-retake" onclick="toggleCameraFeed('id', 'retake')"
                   class="btn btn-outline-secondary btn-sm flex-grow-1 font-bold d-none">Retake</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Fast Check-in Alert for 0 Photos -->
+          <div class="col-12 d-none" id="banner-no-photos">
+            <div class="alert alert-success d-flex align-items-center gap-3 p-3 mb-0 shadow-sm border border-success">
+              <i class="bi bi-shield-check fs-1 text-success"></i>
+              <div>
+                <h6 class="fw-bold mb-1">Fast Check-in Mode (No Photos Required)</h6>
+                <div class="small text-muted">The administrator configured this event to not require photo verification. Click <b>Submit Attendance</b> below to complete check-in.</div>
               </div>
             </div>
           </div>
@@ -371,6 +385,87 @@
       }
     });
 
+    var volunteerEventsList = [];
+    var activeEventPhotoReq = 'both';
+
+    function updateActiveEventPhotoRequirement() {
+      var eventId = document.getElementById("vol-event-select").value;
+      var currentEv = volunteerEventsList.find(function (e) {
+        return (e.eventId || e.eventid || e['event id']) === eventId;
+      });
+      activeEventPhotoReq = (currentEv && (currentEv.photoRequirement || currentEv.photorequirement || currentEv['photo requirement'])) || 'both';
+      activeEventPhotoReq = String(activeEventPhotoReq).toLowerCase().trim();
+      if (["both", "face_only", "id_only", "none"].indexOf(activeEventPhotoReq) === -1) {
+        activeEventPhotoReq = "both";
+      }
+
+      // Update badge near event selector
+      var badgeEl = document.getElementById("vol-event-photo-badge");
+      if (badgeEl) {
+        if (activeEventPhotoReq === 'none') {
+          badgeEl.className = "badge bg-secondary ms-1";
+          badgeEl.innerHTML = '<i class="bi bi-camera-video-off me-1"></i> No Photos';
+        } else if (activeEventPhotoReq === 'face_only') {
+          badgeEl.className = "badge bg-info text-dark ms-1";
+          badgeEl.innerHTML = '<i class="bi bi-person-bounding-box me-1"></i> Face Only (1)';
+        } else if (activeEventPhotoReq === 'id_only') {
+          badgeEl.className = "badge bg-warning text-dark ms-1";
+          badgeEl.innerHTML = '<i class="bi bi-card-image me-1"></i> ID Card Only (1)';
+        } else {
+          badgeEl.className = "badge bg-success ms-1";
+          badgeEl.innerHTML = '<i class="bi bi-camera-fill me-1"></i> Both Photos (2)';
+        }
+      }
+
+      // Update capture cards layout
+      var colFace = document.getElementById("col-face-capture");
+      var colId = document.getElementById("col-id-capture");
+      var bannerNone = document.getElementById("banner-no-photos");
+      var labelFace = document.getElementById("label-face-step");
+      var labelId = document.getElementById("label-id-step");
+
+      if (activeEventPhotoReq === 'none') {
+        if (colFace) colFace.classList.add("d-none");
+        if (colId) colId.classList.add("d-none");
+        if (bannerNone) bannerNone.classList.remove("d-none");
+      } else if (activeEventPhotoReq === 'face_only') {
+        if (colFace) {
+          colFace.classList.remove("d-none");
+          colFace.className = "col-12 col-md-8 mx-auto mb-3";
+        }
+        if (labelFace) labelFace.innerText = "Capture Face Photo (1 Photo Required)";
+        if (colId) colId.classList.add("d-none");
+        if (bannerNone) bannerNone.classList.add("d-none");
+      } else if (activeEventPhotoReq === 'id_only') {
+        if (colFace) colFace.classList.add("d-none");
+        if (colId) {
+          colId.classList.remove("d-none");
+          colId.className = "col-12 col-md-8 mx-auto mb-3";
+        }
+        if (labelId) labelId.innerText = "Capture ID Card Photo (1 Photo Required)";
+        if (bannerNone) bannerNone.classList.add("d-none");
+      } else { // both
+        if (colFace) {
+          colFace.classList.remove("d-none");
+          colFace.className = "col-md-6 mb-3";
+        }
+        if (labelFace) labelFace.innerText = "Step 1: Capture Face Photo";
+        if (colId) {
+          colId.classList.remove("d-none");
+          colId.className = "col-md-6 mb-3";
+        }
+        if (labelId) labelId.innerText = "Step 2: Capture ID Card Photo";
+        if (bannerNone) bannerNone.classList.add("d-none");
+      }
+
+      checkSubmissionStatusReady();
+    }
+
+    function onTargetEventChange() {
+      updateActiveEventPhotoRequirement();
+      detectActiveSession();
+    }
+
     function loadEventsSelector() {
       var eselect = document.getElementById("vol-event-select");
       execApi(
@@ -379,18 +474,21 @@
         function(response) {
           if (response.success) {
             eselect.innerHTML = "";
+            volunteerEventsList = response.events || [];
 
-            if (response.events.length === 0) {
+            if (volunteerEventsList.length === 0) {
               eselect.innerHTML = '<option value="">No events created by admin</option>';
+              updateActiveEventPhotoRequirement();
               return;
             }
 
-            response.events.forEach(function (ev) {
+            volunteerEventsList.forEach(function (ev) {
               var id = ev.eventId || ev.eventid || ev['event id'];
               eselect.innerHTML += `<option value="${id}">${ev.eventName}</option>`;
             });
 
             setScanControlsDisabled(false);
+            updateActiveEventPhotoRequirement();
             detectActiveSession();
           } else {
             showStatusToast("Failed to fetch events dropdown: " + response.message, "danger");
@@ -509,6 +607,8 @@
 
       var submitBtn = document.getElementById("submit-att-btn");
       if (submitBtn) submitBtn.disabled = true;
+
+      updateActiveEventPhotoRequirement();
     }
 
     function startLiveQRScanner() {
@@ -695,6 +795,8 @@
             var captureWorkflow = document.getElementById("workflow-capture");
             if (scanStart) scanStart.classList.add("d-none");
             if (captureWorkflow) captureWorkflow.classList.remove("d-none");
+            updateActiveEventPhotoRequirement();
+            checkSubmissionStatusReady();
           } else {
             document.getElementById("vol-error-message").innerText = response.message;
             document.getElementById("vol-error-alert").classList.remove("d-none");
@@ -855,8 +957,23 @@
     }
 
     function checkSubmissionStatusReady() {
-      var isReady = scannedStudentId && facePhotoBase64 && idPhotoBase64;
-      document.getElementById("submit-att-btn").disabled = !isReady;
+      var submitBtn = document.getElementById("submit-att-btn");
+      if (!submitBtn) return;
+      if (!scannedStudentId) {
+        submitBtn.disabled = true;
+        return;
+      }
+      var isReady = false;
+      if (activeEventPhotoReq === 'none') {
+        isReady = true;
+      } else if (activeEventPhotoReq === 'face_only') {
+        isReady = !!facePhotoBase64;
+      } else if (activeEventPhotoReq === 'id_only') {
+        isReady = !!idPhotoBase64;
+      } else { // both
+        isReady = !!(facePhotoBase64 && idPhotoBase64);
+      }
+      submitBtn.disabled = !isReady;
     }
 
     /* Submit attendance check-in logs */

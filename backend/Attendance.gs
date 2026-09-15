@@ -88,18 +88,35 @@ function submitStudentAttendanceLogs(studentId, eventId, sessionName, facePhotoB
     }
     if (!eventObj) return { success: false, message: "Event record not found." };
     
-    // 4. Upload images to Google Drive folder structure: "IEEE_Attendance_Photos/{EventName}_{EventId}/{SessionName}/"
+    // Check event photo requirement
+    var photoReq = String(eventObj.photoRequirement || eventObj.photorequirement || "both").toLowerCase().trim();
+    if (["both", "face_only", "id_only", "none"].indexOf(photoReq) === -1) {
+      photoReq = "both";
+    }
+
+    if ((photoReq === "both" || photoReq === "face_only") && (!facePhotoBase64 || facePhotoBase64.indexOf("data:image") !== 0)) {
+      return { success: false, message: "Face photo is required for this event." };
+    }
+    if ((photoReq === "both" || photoReq === "id_only") && (!idPhotoBase64 || idPhotoBase64.indexOf("data:image") !== 0)) {
+      return { success: false, message: "Student ID card photo is required for this event." };
+    }
+
+    // 4. Upload images to Google Drive if provided
     var cleanEventName = eventObj.eventName.replace(/[^a-zA-Z0-9]/g, "_");
     var folderPath = cleanEventName + "_" + targetEvIdStr.substring(0, 8) + "/" + sessionName.replace(/\s+/g, "_");
     
-    var facePhotoURL = uploadImageToDrive(facePhotoBase64, FACE_PHOTOS_FOLDER_ID, folderPath, student.registrationNumber + "_face.jpg");
-    var idPhotoURL = uploadImageToDrive(idPhotoBase64, ID_PHOTOS_FOLDER_ID, folderPath, student.registrationNumber + "_id.jpg");
+    var facePhotoURL = (facePhotoBase64 && facePhotoBase64.indexOf("data:image") === 0)
+      ? uploadImageToDrive(facePhotoBase64, FACE_PHOTOS_FOLDER_ID, folderPath, student.registrationNumber + "_face.jpg")
+      : "";
+    var idPhotoURL = (idPhotoBase64 && idPhotoBase64.indexOf("data:image") === 0)
+      ? uploadImageToDrive(idPhotoBase64, ID_PHOTOS_FOLDER_ID, folderPath, student.registrationNumber + "_id.jpg")
+      : "";
     
     // 5. Append attendance logs to sheet
     var attendanceId = "attendance_" + targetEvIdStr + "_" + sessionName.replace(/\s+/g, "_") + "_" + studentId;
     var timestamp = new Date().toISOString();
-    var status = "Pending Verification";
-    var remarks = "";
+    var status = (photoReq === "none") ? "Verified" : "Pending Verification";
+    var remarks = (photoReq === "none") ? "Auto-verified (No photo requirement)" : "";
     
     attendanceSheet.appendRow([
       attendanceId,
@@ -118,7 +135,10 @@ function submitStudentAttendanceLogs(studentId, eventId, sessionName, facePhotoB
       timestamp
     ]);
     
-    return { success: true, message: "Attendance record successfully logged and marked as 'Pending Verification'." };
+    var successMsg = (photoReq === "none")
+      ? "Attendance record successfully logged and auto-verified (No photos required)."
+      : "Attendance record successfully logged and marked as 'Pending Verification'.";
+    return { success: true, message: successMsg };
   } catch (e) {
     Logger.log("Attendance submission error: " + e.toString());
     return { success: false, message: "Server error submitting attendance: " + e.message };

@@ -35,7 +35,7 @@ function callBackendApi(action, payload) {
         case 'scanQRToken': runner.scanStudentQRToken(payload.qrToken); break;
         case 'submitAttendance': runner.submitStudentAttendanceLogs(payload.studentId, payload.eventId, payload.sessionName, payload.facePhotoBase64, payload.idPhotoBase64, payload.volunteerUserId); break;
         case 'getAdminEvents': runner.getVolunteerEventsList(); break;
-        case 'createEvent': runner.createEvent(payload.eventName, payload.eventDateStr || payload.eventDate, payload.sessionsCount || payload.sessions || 1); break;
+        case 'createEvent': runner.createEvent(payload.eventName, payload.eventDateStr || payload.eventDate, payload.sessionsCount || payload.sessions || 1, payload.photoRequirement || payload.photosRequired || 'both'); break;
         case 'deleteEvent': runner.deleteEvent(payload.eventId); break;
         case 'deleteStudent': runner.deleteStudent(payload.studentId); break;
         case 'getEventSessions': runner.getEventSessions(payload.eventId); break;

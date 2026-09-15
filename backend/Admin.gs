@@ -106,20 +106,30 @@ function createVolunteerAccount(name, username, password) {
   }
 }
 
-function createEvent(eventName, eventDateStr, sessionsCount) {
+function createEvent(eventName, eventDateStr, sessionsCount, photoRequirement) {
   try {
     var ss = getSpreadsheet();
     var eventSheet = ss.getSheetByName("Events");
     if (!eventSheet) return { success: false, message: "Events sheet database not found." };
     
+    // Ensure column 5 has header if sheet was previously created with only 4 columns
+    if (eventSheet.getLastColumn() < 5) {
+      eventSheet.getRange(1, 5).setValue("photoRequirement");
+    }
+
     var eventId = "event_" + Utilities.getUuid();
     var countVal = parseInt(sessionsCount) || 1;
+    var photoReq = String(photoRequirement || "both").toLowerCase().trim();
+    if (["both", "face_only", "id_only", "none"].indexOf(photoReq) === -1) {
+      photoReq = "both";
+    }
     
     eventSheet.appendRow([
       eventId,
       eventName.trim(),
       eventDateStr,
-      countVal
+      countVal,
+      photoReq
     ]);
     
     // Seed Locked session statuses

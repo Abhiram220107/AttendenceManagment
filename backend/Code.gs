@@ -88,7 +88,12 @@ function doPost(e) {
 
       case 'createEvent':
       case 'createNewEvent':
-        response = createEvent(payload.eventName, payload.eventDateStr || payload.eventDate, payload.sessionsCount || payload.sessions || 1);
+        response = createEvent(
+          payload.eventName, 
+          payload.eventDateStr || payload.eventDate, 
+          payload.sessionsCount || payload.sessions || 1,
+          payload.photoRequirement || payload.photosRequired || 'both'
+        );
         break;
 
       case 'deleteEvent':

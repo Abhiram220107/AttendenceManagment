@@ -139,7 +139,11 @@ function initDatabase() {
   getOrCreateSheet(ss, "Admins", ["adminId", "username", "name", "password"]);
   getOrCreateSheet(ss, "Students", ["studentId", "registrationNumber", "name", "department", "email", "password", "qrToken", "role", "qrCodeURL"]);
   getOrCreateSheet(ss, "Volunteers", ["volunteerId", "name", "username", "password"]);
-  getOrCreateSheet(ss, "Events", ["eventId", "eventName", "eventDate", "sessionsCount"]);
+  getOrCreateSheet(ss, "Events", ["eventId", "eventName", "eventDate", "sessionsCount", "photoRequirement"]);
+  var evSheetCheck = ss.getSheetByName("Events");
+  if (evSheetCheck && evSheetCheck.getLastRow() >= 1 && evSheetCheck.getLastColumn() < 5) {
+    evSheetCheck.getRange(1, 5).setValue("photoRequirement");
+  }
   getOrCreateSheet(ss, "Attendance", ["attendanceId", "studentId", "registrationNumber", "name", "department", "eventId", "eventName", "session", "facePhotoURL", "idPhotoURL", "status", "remarks", "volunteerId", "timestamp"]);
   var sessionStatusesSheet = getOrCreateSheet(ss, "SessionStatuses", ["eventId", "sessionName", "status"]);
   

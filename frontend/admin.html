@@ -330,6 +330,7 @@
                     <th>Event Name</th>
                     <th>Event Date</th>
                     <th>Attendance Sessions</th>
+                    <th>Photo Verification</th>
                     <th class="text-end">Actions</th>
                   </tr>
                 </thead>
@@ -563,14 +564,16 @@
                     <div class="row row-cols-2 g-2">
                       <div class="col">
                         <div class="small text-muted mb-1 text-center font-semibold">Face Photo</div>
-                        <div class="camera-viewport border">
+                        <div class="camera-viewport border position-relative d-flex align-items-center justify-content-center bg-light">
                           <img id="work-photo-face" src="" class="w-100 h-100 object-fit-cover verification-zoom" alt="Face" onclick="window.open(this.src)">
+                          <span id="work-photo-face-empty" class="text-muted small d-none p-2 text-center"><i class="bi bi-camera-video-off d-block fs-4 mb-1"></i>Not Required</span>
                         </div>
                       </div>
                       <div class="col">
                         <div class="small text-muted mb-1 text-center font-semibold">ID Card Photo</div>
-                        <div class="camera-viewport border">
+                        <div class="camera-viewport border position-relative d-flex align-items-center justify-content-center bg-light">
                           <img id="work-photo-id" src="" class="w-100 h-100 object-fit-cover verification-zoom" alt="ID Card" onclick="window.open(this.src)">
+                          <span id="work-photo-id-empty" class="text-muted small d-none p-2 text-center"><i class="bi bi-card-heading d-block fs-4 mb-1"></i>Not Required</span>
                         </div>
                       </div>
                     </div>
@@ -934,6 +937,16 @@
                 <input type="number" id="event-sessions-input" class="form-control" min="1" max="20" placeholder="e.g. 4" required>
               </div>
             </div>
+            <div class="mb-3">
+              <label for="event-photo-req-input" class="form-label font-bold text-sm">Photo Verification Requirement</label>
+              <select id="event-photo-req-input" class="form-select">
+                <option value="both" selected>Both Photos (Face Selfie + ID Card) - 2 Photos (Default)</option>
+                <option value="face_only">Face Photo Only - 1 Photo</option>
+                <option value="id_only">ID Card Photo Only - 1 Photo</option>
+                <option value="none">No Photos Required - 0 Photos (Fast QR Scan Only)</option>
+              </select>
+              <div class="form-text text-muted small">Choose how many verification photos volunteers must capture for each student.</div>
+            </div>
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
@@ -1173,18 +1186,31 @@
     function renderEventsTable() {
       var tbody = document.getElementById("events-table-body");
       if (globalEvents.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="4" class="text-center text-muted py-4"><i class="bi bi-calendar-x d-block mb-1 fs-3"></i> No events found</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted py-4"><i class="bi bi-calendar-x d-block mb-1 fs-3"></i> No events found</td></tr>`;
         return;
       }
       
       var html = "";
       globalEvents.forEach(function(ev) {
         var displayDate = ev.eventDate ? ev.eventDate.split('T')[0] : '-';
+        var photoReq = String(ev.photoRequirement || ev.photorequirement || 'both').toLowerCase().trim();
+        var photoBadge = '';
+        if (photoReq === 'none') {
+          photoBadge = '<span class="badge bg-secondary px-2.5 py-1 fw-semibold"><i class="bi bi-camera-video-off me-1"></i> No Photos</span>';
+        } else if (photoReq === 'face_only') {
+          photoBadge = '<span class="badge bg-info text-dark px-2.5 py-1 fw-semibold"><i class="bi bi-person-bounding-box me-1"></i> Face Only (1)</span>';
+        } else if (photoReq === 'id_only') {
+          photoBadge = '<span class="badge bg-warning text-dark px-2.5 py-1 fw-semibold"><i class="bi bi-card-image me-1"></i> ID Card Only (1)</span>';
+        } else {
+          photoBadge = '<span class="badge bg-success px-2.5 py-1 fw-semibold"><i class="bi bi-camera-fill me-1"></i> Both Photos (2)</span>';
+        }
+
         html += `
           <tr>
             <td><div class="fw-bold">${ev.eventName}</div></td>
             <td class="text-muted">${displayDate}</td>
             <td><span class="badge bg-light text-primary border border-primary px-2.5 py-1 fw-semibold">${ev.sessionsCount || '1'} ${ev.sessionsCount == 1 ? 'Session' : 'Sessions'}</span></td>
+            <td>${photoBadge}</td>
             <td class="text-end">
               <button onclick="openManageSessionsModal('${ev.eventId || ev.eventid}', '${ev.eventName.replace(/'/g, "\\'")}')" class="btn btn-outline-primary btn-sm py-1.5 px-3 me-2">
                 <i class="bi bi-sliders"></i> Sessions
@@ -1349,6 +1375,7 @@
       var name = document.getElementById("event-name-input").value.trim();
       var date = document.getElementById("event-date-input").value;
       var sessions = document.getElementById("event-sessions-input").value;
+      var photoReq = document.getElementById("event-photo-req-input").value || "both";
       var submitBtn = document.getElementById("event-submit-btn");
 
       submitBtn.disabled = true;
@@ -1356,7 +1383,7 @@
 
       execApi(
         'createEvent',
-        { eventName: name, eventDate: date, sessions: sessions },
+        { eventName: name, eventDate: date, sessions: sessions, photoRequirement: photoReq },
         function(response) {
           submitBtn.disabled = false;
           submitBtn.innerText = "Create Event";
@@ -1799,8 +1826,29 @@
       document.getElementById("work-student-scope").innerText = globalSelectedRecord.eventName + " - " + globalSelectedRecord.session;
       document.getElementById("work-scanned-by").innerText = globalSelectedRecord.volunteerName || "Unknown";
       
-      document.getElementById("work-photo-face").src = formatDriveDirectLink(globalSelectedRecord.facePhotoURL);
-      document.getElementById("work-photo-id").src = formatDriveDirectLink(globalSelectedRecord.idPhotoURL);
+      var faceImg = document.getElementById("work-photo-face");
+      var faceEmpty = document.getElementById("work-photo-face-empty");
+      if (globalSelectedRecord.facePhotoURL) {
+        faceImg.src = formatDriveDirectLink(globalSelectedRecord.facePhotoURL);
+        faceImg.classList.remove("d-none");
+        if (faceEmpty) faceEmpty.classList.add("d-none");
+      } else {
+        faceImg.src = "";
+        faceImg.classList.add("d-none");
+        if (faceEmpty) faceEmpty.classList.remove("d-none");
+      }
+
+      var idImg = document.getElementById("work-photo-id");
+      var idEmpty = document.getElementById("work-photo-id-empty");
+      if (globalSelectedRecord.idPhotoURL) {
+        idImg.src = formatDriveDirectLink(globalSelectedRecord.idPhotoURL);
+        idImg.classList.remove("d-none");
+        if (idEmpty) idEmpty.classList.add("d-none");
+      } else {
+        idImg.src = "";
+        idImg.classList.add("d-none");
+        if (idEmpty) idEmpty.classList.remove("d-none");
+      }
       
       document.getElementById("work-remarks").value = "";
       
