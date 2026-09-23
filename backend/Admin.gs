@@ -2,11 +2,51 @@
  * IEEE Event Attendance System - Admin Services
  */
 
-function importParticipantsFromExcelArray(rows) {
+function clearAllStudentsData() {
+  try {
+    var ss = getSpreadsheet();
+    var studentSheet = ss.getSheetByName("Students");
+    if (!studentSheet) return { success: false, message: "Students sheet not found." };
+    
+    var lastRow = studentSheet.getLastRow();
+    if (lastRow > 1) {
+      studentSheet.deleteRows(2, lastRow - 1);
+    }
+    
+    // Also clear associated attendance records
+    var attSheet = ss.getSheetByName("Attendance");
+    if (attSheet) {
+      var attLastRow = attSheet.getLastRow();
+      if (attLastRow > 1) {
+        attSheet.deleteRows(2, attLastRow - 1);
+      }
+    }
+    
+    return { success: true, message: "All previous participant records and attendance logs have been erased." };
+  } catch (e) {
+    return { success: false, message: "Error erasing previous data: " + e.message };
+  }
+}
+
+function importParticipantsFromExcelArray(rows, erasePrevious) {
   try {
     var ss = getSpreadsheet();
     var studentSheet = ss.getSheetByName("Students");
     if (!studentSheet) return { success: false, message: "Students sheet database not found." };
+
+    if (erasePrevious === true || erasePrevious === "true") {
+      var lastRow = studentSheet.getLastRow();
+      if (lastRow > 1) {
+        studentSheet.deleteRows(2, lastRow - 1);
+      }
+      var attSheet = ss.getSheetByName("Attendance");
+      if (attSheet) {
+        var attLastRow = attSheet.getLastRow();
+        if (attLastRow > 1) {
+          attSheet.deleteRows(2, attLastRow - 1);
+        }
+      }
+    }
     
     var existingStudents = getSheetDataAsJson("Students");
     var existingRegs = existingStudents.map(function(s) { 

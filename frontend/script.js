@@ -42,7 +42,10 @@ function callBackendApi(action, payload) {
         case 'setSessionStatus':
         case 'manageEventSessions': runner.setSessionStatus(payload.eventId, payload.sessionName, payload.newStatus || payload.actionType); break;
         case 'uploadStudentsBatch':
-        case 'importParticipants': runner.importParticipantsFromExcelArray(payload.rows || payload.studentsList); break;
+        case 'importParticipants': runner.importParticipantsFromExcelArray(payload.rows || payload.studentsList, payload.erasePrevious); break;
+        case 'clearAllStudents':
+        case 'eraseAllStudents':
+        case 'erasePreviousData': runner.clearAllStudentsData(); break;
         case 'getStudentsList': runner.getAdminStudentsList(); break;
         case 'getVolunteersList': runner.getAdminVolunteersList(); break;
         case 'createVolunteer': runner.createVolunteerAccount(payload.name, payload.username, payload.password); break;

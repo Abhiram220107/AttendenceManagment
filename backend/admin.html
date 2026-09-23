@@ -372,9 +372,24 @@
 
                 <div id="upload-feedback" class="mt-4"></div>
 
-                <div class="d-flex justify-content-end gap-2 mt-4">
+                <div class="card border border-amber-200 bg-amber-50 p-3 mt-4 rounded-3">
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="erase-previous-check">
+                    <label class="form-check-label small fw-bold text-dark cursor-pointer" for="erase-previous-check">
+                      <i class="bi bi-trash3 text-danger me-1"></i> Erase previous participants &amp; attendance before importing
+                    </label>
+                  </div>
+                  <div class="text-muted small ms-4 mt-1" style="font-size: 0.75rem;">
+                    When checked, all existing students and attendance logs will be cleared and replaced with this file.
+                  </div>
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mt-4">
+                  <button type="button" onclick="erasePreviousDataDirectly()" class="btn btn-outline-danger px-3 py-2">
+                    <i class="bi bi-trash3 me-1"></i> Erase Previous Data Now
+                  </button>
                   <button id="import-btn" onclick="submitImportedRows()" class="btn btn-primary px-4 py-2" disabled>
-                    <i class="bi bi-cloud-arrow-up"></i> Import Participants
+                    <i class="bi bi-cloud-arrow-up me-1"></i> Import Participants
                   </button>
                 </div>
               </div>
@@ -437,15 +452,20 @@
               <h2 class="fw-bold text-gray-900 mb-0">Students List</h2>
               <p class="text-muted small">View unique QR credentials</p>
             </div>
-            <div class="input-group" style="max-width: 320px;">
-              <span class="input-group-text bg-white text-muted border-end-0"><i class="bi bi-search"></i></span>
-              <input 
-                type="text" 
-                id="search-students" 
-                oninput="renderStudentsTable()" 
-                class="form-control border-start-0" 
-                placeholder="Search name, reg number, dept..."
-              >
+            <div class="d-flex gap-2 align-items-center">
+              <button onclick="erasePreviousDataDirectly()" class="btn btn-outline-danger btn-sm text-nowrap">
+                <i class="bi bi-trash3 me-1"></i> Erase All Students
+              </button>
+              <div class="input-group" style="max-width: 320px;">
+                <span class="input-group-text bg-white text-muted border-end-0"><i class="bi bi-search"></i></span>
+                <input 
+                  type="text" 
+                  id="search-students" 
+                  oninput="renderStudentsTable()" 
+                  class="form-control border-start-0" 
+                  placeholder="Search name, reg number, dept..."
+                >
+              </div>
             </div>
           </div>
 
@@ -1497,8 +1517,50 @@
       reader.readAsBinaryString(file);
     }
 
+    function erasePreviousDataDirectly() {
+      if (!confirm("WARNING: Are you sure you want to permanently erase ALL previous participants and their attendance logs? This action cannot be undone.")) {
+        return;
+      }
+      
+      var confirmText = prompt("Type 'ERASE' in capital letters to confirm permanent deletion of all participants:");
+      if (confirmText !== "ERASE") {
+        showStatusToast("Erase cancelled. No data was deleted.", "secondary");
+        return;
+      }
+
+      showStatusToast("Erasing participant data...", "warning");
+      execApi(
+        'clearAllStudents',
+        {},
+        function(response) {
+          if (response.success) {
+            showStatusToast(response.message, "success");
+            fetchStudentsList();
+            var feedback = document.getElementById("upload-feedback");
+            if (feedback) {
+              feedback.innerHTML = `<div class="alert alert-warning font-bold text-sm mb-0"><i class="bi bi-trash3"></i> ${response.message}</div>`;
+            }
+          } else {
+            showStatusToast(response.message, "danger");
+          }
+        },
+        function(err) {
+          showStatusToast("Failed to erase data: " + err.message, "danger");
+        }
+      );
+    }
+
     function submitImportedRows() {
       if (excelParsedRows.length === 0) return;
+      
+      var eraseCheck = document.getElementById("erase-previous-check");
+      var erasePrevious = eraseCheck ? eraseCheck.checked : false;
+
+      if (erasePrevious) {
+        if (!confirm("You have selected to ERASE all previous participants before importing. Are you sure you want to replace all existing student records with this file?")) {
+          return;
+        }
+      }
       
       var importBtn = document.getElementById("import-btn");
       var feedback = document.getElementById("upload-feedback");
@@ -1508,13 +1570,15 @@
       
       execApi(
         'importParticipants',
-        { rows: excelParsedRows },
+        { rows: excelParsedRows, erasePrevious: erasePrevious },
         function(response) {
           if (response.success) {
             feedback.innerHTML = `<div class="alert alert-success font-bold text-sm mb-0"><i class="bi bi-check-circle-fill"></i> ${response.message}</div>`;
             document.getElementById("excel-file-input").value = "";
             document.getElementById("excel-file-label").innerText = "Click to upload or drag & drop Excel file";
+            if (eraseCheck) eraseCheck.checked = false;
             excelParsedRows = [];
+            fetchStudentsList();
           } else {
             importBtn.disabled = false;
             feedback.innerHTML = `<div class="alert alert-danger font-bold text-sm">${response.message}</div>`;

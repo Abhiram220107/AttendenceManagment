@@ -77,7 +77,13 @@ function doPost(e) {
       case 'importParticipants':
       case 'uploadStudentsBatch':
       case 'importParticipantsFromExcelArray':
-        response = importParticipantsFromExcelArray(payload.rows || payload.studentsList || []);
+        response = importParticipantsFromExcelArray(payload.rows || payload.studentsList || [], payload.erasePrevious);
+        break;
+
+      case 'clearAllStudents':
+      case 'eraseAllStudents':
+      case 'erasePreviousData':
+        response = clearAllStudentsData();
         break;
 
       case 'createVolunteer':
