@@ -134,17 +134,13 @@
           </div>
 
           <div class="row g-3 text-start">
-            <div class="col-sm-4">
+            <div class="col-sm-6">
               <span class="small text-muted block font-semibold">Student Name</span>
               <span id="scan-name" class="fw-bold truncate block">-</span>
             </div>
-            <div class="col-sm-4">
-              <span class="small text-muted block font-semibold">Registration Number</span>
+            <div class="col-sm-6">
+              <span class="small text-muted block font-semibold">Email / Username</span>
               <span id="scan-reg" class="fw-bold tracking-wider block">-</span>
-            </div>
-            <div class="col-sm-4">
-              <span class="small text-muted block font-semibold">Department</span>
-              <span id="scan-dept" class="fw-bold truncate block">-</span>
             </div>
           </div>
         </div>
@@ -340,8 +336,8 @@
           var st = JSON.parse(savedStudent);
           scannedStudentId = st.studentId;
           document.getElementById("scan-name").innerText = st.name;
-          document.getElementById("scan-reg").innerText = st.registrationNumber;
-          document.getElementById("scan-dept").innerText = st.department;
+          document.getElementById("scan-reg").innerText = st.email || st.registrationNumber;
+          if (document.getElementById("scan-dept")) document.getElementById("scan-dept").innerText = st.department || "";
           
           var scanStart = document.getElementById("workflow-scan-start");
           var captureWorkflow = document.getElementById("workflow-capture");
@@ -788,8 +784,8 @@
             }));
 
             document.getElementById("scan-name").innerText = st.name;
-            document.getElementById("scan-reg").innerText = st.registrationNumber;
-            document.getElementById("scan-dept").innerText = st.department;
+            document.getElementById("scan-reg").innerText = st.email || st.registrationNumber;
+            if (document.getElementById("scan-dept")) document.getElementById("scan-dept").innerText = st.department || "";
 
             var scanStart = document.getElementById("workflow-scan-start");
             var captureWorkflow = document.getElementById("workflow-capture");

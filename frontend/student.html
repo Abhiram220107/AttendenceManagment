@@ -56,8 +56,7 @@
           <div class="row align-items-center g-4">
             <div class="col-md-8">
               <h2 class="fw-bold text-gray-900 mb-1">Welcome back, <span id="st-welcome-name">-</span>!</h2>
-              <p class="text-muted small mb-0 font-semibold">Reg No: <span id="st-welcome-reg" class="fw-bold text-slate-800">-</span></p>
-              <p class="text-muted small mb-0 font-semibold">Department: <span id="st-welcome-dept" class="fw-semibold text-slate-800">-</span></p>
+              <p class="text-muted small mb-0 font-semibold">Email: <span id="st-welcome-reg" class="fw-bold text-slate-800">-</span></p>
             </div>
             <div class="col-md-4 text-md-end">
               <button onclick="openQRModal()" class="btn btn-primary btn-lg py-3 px-4 w-100 font-bold shadow-lg">
@@ -198,12 +197,14 @@
             
             // Populate Welcome
             document.getElementById("st-welcome-name").innerText = studentProfile.name;
-            document.getElementById("st-welcome-reg").innerText = studentProfile.registrationNumber;
-            document.getElementById("st-welcome-dept").innerText = studentProfile.department;
+            document.getElementById("st-welcome-reg").innerText = studentProfile.email || studentProfile.registrationNumber;
+            if (document.getElementById("st-welcome-dept")) {
+              document.getElementById("st-welcome-dept").innerText = studentProfile.department || "";
+            }
             
             // Populate Modal Headers
             document.getElementById("qr-name").innerText = studentProfile.name;
-            document.getElementById("qr-reg").innerText = "Reg No: " + studentProfile.registrationNumber;
+            document.getElementById("qr-reg").innerText = "Email: " + (studentProfile.email || studentProfile.registrationNumber);
             
             renderChecklistContainer();
             document.getElementById("student-content").classList.remove("d-none");

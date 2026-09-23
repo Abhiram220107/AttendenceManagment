@@ -41,18 +41,20 @@ function verifyLoginCredentials(username, password) {
       }
     }
     
-    // 3. Check Students sheet (match by registration number, ignore spaces)
+    // 3. Check Students sheet (match by username / registration number or email)
     var students = getSheetDataAsJson("Students");
     var normalizedUsernameNoSpaces = normalizedUsername.replace(/\s+/g, "");
     for (var i = 0; i < students.length; i++) {
       var studentReg = students[i].registrationNumber ? students[i].registrationNumber.toString().trim().toLowerCase().replace(/\s+/g, "") : "";
-      if (studentReg === normalizedUsernameNoSpaces && students[i].password.toString().trim() === pwd) {
+      var studentEmail = students[i].email ? students[i].email.toString().trim().toLowerCase().replace(/\s+/g, "") : "";
+      if ((studentReg === normalizedUsernameNoSpaces || studentEmail === normalizedUsernameNoSpaces) && students[i].password.toString().trim() === pwd) {
         return {
           success: true,
           role: "student",
           name: students[i].name,
-          registrationNumber: students[i].registrationNumber,
-          department: students[i].department,
+          registrationNumber: students[i].email || students[i].registrationNumber,
+          email: students[i].email || students[i].registrationNumber,
+          department: "",
           userId: students[i].studentId
         };
       }

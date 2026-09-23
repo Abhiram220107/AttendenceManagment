@@ -411,8 +411,8 @@
                   <div class="d-flex gap-2.5 mb-3">
                     <span class="badge bg-primary rounded-circle d-flex align-items-center justify-content-center" style="width: 20px; height: 20px; font-size: 0.65rem;">2</span>
                     <div>
-                      <p class="small font-bold mb-0">Username</p>
-                      <p class="text-muted small" style="font-size: 0.75rem;">Registration code or username (Required)</p>
+                      <p class="small font-bold mb-0">Email / Username</p>
+                      <p class="text-muted small" style="font-size: 0.75rem;">Participant's email address for login (Required)</p>
                     </div>
                   </div>
                   <div class="d-flex gap-2.5 mb-3">
@@ -420,20 +420,6 @@
                     <div>
                       <p class="small font-bold mb-0">Password</p>
                       <p class="text-muted small" style="font-size: 0.75rem;">Login password (Required)</p>
-                    </div>
-                  </div>
-                  <div class="d-flex gap-2.5 mb-3">
-                    <span class="badge bg-secondary rounded-circle d-flex align-items-center justify-content-center" style="width: 20px; height: 20px; font-size: 0.65rem;">4</span>
-                    <div>
-                      <p class="small font-bold mb-0">Department (Optional)</p>
-                      <p class="text-muted small" style="font-size: 0.75rem;">Defaults to "General"</p>
-                    </div>
-                  </div>
-                  <div class="d-flex gap-2.5 mb-3">
-                    <span class="badge bg-secondary rounded-circle d-flex align-items-center justify-content-center" style="width: 20px; height: 20px; font-size: 0.65rem;">5</span>
-                    <div>
-                      <p class="small font-bold mb-0">Email (Optional)</p>
-                      <p class="text-muted small" style="font-size: 0.75rem;">Contact email</p>
                     </div>
                   </div>
                 </div>
@@ -466,7 +452,7 @@
                   id="search-students" 
                   oninput="renderStudentsTable()" 
                   class="form-control border-start-0" 
-                  placeholder="Search name, reg number, dept..."
+                  placeholder="Search name, email / username..."
                 >
               </div>
             </div>
@@ -477,10 +463,8 @@
               <table class="table table-hover align-middle mb-0">
                 <thead class="table-light">
                   <tr>
-                    <th>Reg Number</th>
-                    <th>Name</th>
-                    <th>Department</th>
                     <th>Email</th>
+                    <th>Name</th>
                     <th class="text-end">Actions</th>
                   </tr>
                 </thead>
@@ -570,12 +554,8 @@
                         <p id="work-student-name" class="fw-bold mb-0">-</p>
                       </div>
                       <div class="mb-3">
-                        <label class="small text-muted font-medium block">Registration Number</label>
+                        <label class="small text-muted font-medium block">Email / Username</label>
                         <p id="work-student-reg" class="fw-bold mb-0">-</p>
-                      </div>
-                      <div class="mb-3">
-                        <label class="small text-muted font-medium block">Department</label>
-                        <p id="work-student-dept" class="fw-semibold mb-0">-</p>
                       </div>
                       <div class="border-top pt-2.5 mt-3">
                         <label class="small text-muted font-medium block">Event & Day</label>
@@ -689,9 +669,8 @@
               <table id="reports-matrix-table" class="table table-hover align-middle mb-0">
                 <thead class="table-light">
                   <tr id="reports-matrix-header-row">
-                    <th>Reg Number</th>
+                    <th>Email</th>
                     <th>Student Name</th>
-                    <th>Department</th>
                     <!-- Dynamic session headers will go here -->
                   </tr>
                 </thead>
@@ -852,15 +831,9 @@
                   </div>
                 </div>
                 <div class="row g-3 mb-4">
-                  <div class="col-6">
+                  <div class="col-12">
                     <div class="bg-light rounded p-3">
-                      <small class="text-muted fw-bold text-uppercase d-block">Department</small>
-                      <span id="ema-student-dept" class="fw-semibold">--</span>
-                    </div>
-                  </div>
-                  <div class="col-6">
-                    <div class="bg-light rounded p-3">
-                      <small class="text-muted fw-bold text-uppercase d-block">Email</small>
+                      <small class="text-muted fw-bold text-uppercase d-block">Email / Username</small>
                       <span id="ema-student-email" class="fw-semibold">--</span>
                     </div>
                   </div>
@@ -929,9 +902,9 @@
         </div>
         <div class="modal-body text-center">
           <h4 id="qr-modal-name" class="fw-bold mb-1">Student Name</h4>
-          <p id="qr-modal-reg" class="text-muted small">Reg No: 2026CS101</p>
+          <p id="qr-modal-reg" class="text-muted small">Email: student@example.com</p>
           <div id="qr-canvas-holder" class="my-4 d-inline-block p-3 border border-dark rounded bg-white shadow-sm"></div>
-          <p class="text-muted small px-3">Unique security token. Does not contain registration number.</p>
+          <p class="text-muted small px-3">Unique security token. Does not contain password data.</p>
         </div>
         <div class="modal-footer flex-column">
           <button onclick="printStudentQRCode()" class="btn btn-primary w-100">
@@ -1002,8 +975,8 @@
               <input type="text" id="st-name-input" class="form-control" placeholder="e.g. John Doe" required>
             </div>
             <div class="mb-3">
-              <label for="st-username-input" class="form-label font-bold text-sm">Username / Registration Number</label>
-              <input type="text" id="st-username-input" class="form-control" placeholder="e.g. MCSE-01 or 2026CS101" required>
+              <label for="st-username-input" class="form-label font-bold text-sm">Email / Username</label>
+              <input type="text" id="st-username-input" class="form-control" placeholder="e.g. participant@example.com" required>
             </div>
             <div class="mb-3">
               <label for="st-pass-input" class="form-label font-bold text-sm">Login Password</label>
@@ -1501,7 +1474,7 @@
           
           var regKey = foundKeys.find(function(k) {
             var n = k.toLowerCase().replace(/[^a-z0-9]/g, "");
-            return n.indexOf("username") !== -1 || n.indexOf("user") !== -1 || n.indexOf("registration") !== -1 || n.indexOf("regnum") !== -1 || n.indexOf("regno") !== -1 || n.indexOf("regnumber") !== -1 || n.indexOf("roll") !== -1 || n.indexOf("id") !== -1;
+            return n.indexOf("email") !== -1 || n.indexOf("mail") !== -1 || n.indexOf("username") !== -1 || n.indexOf("user") !== -1 || n.indexOf("registration") !== -1 || n.indexOf("regnum") !== -1 || n.indexOf("regno") !== -1 || n.indexOf("regnumber") !== -1 || n.indexOf("roll") !== -1 || n.indexOf("id") !== -1;
           });
           
           var nameKey = foundKeys.find(function(k) {
@@ -1513,30 +1486,21 @@
             var n = k.toLowerCase().replace(/[^a-z0-9]/g, "");
             return n.indexOf("password") !== -1 || n.indexOf("pass") !== -1 || n.indexOf("pwd") !== -1;
           });
-
-          var deptKey = foundKeys.find(function(k) {
-            var n = k.toLowerCase().replace(/[^a-z0-9]/g, "");
-            return n.indexOf("department") !== -1 || n === "dept" || n === "branch";
-          });
-
-          var emailKey = foundKeys.find(function(k) {
-            var n = k.toLowerCase().replace(/[^a-z0-9]/g, "");
-            return n.indexOf("email") !== -1 || n.indexOf("mail") !== -1;
-          });
           
           if (!regKey || !nameKey || !pwdKey) {
-            feedback.innerHTML = `<div class="alert alert-danger font-bold text-sm">Error: Required columns ("Name", "Username", "Password") not found in spreadsheet.</div>`;
+            feedback.innerHTML = `<div class="alert alert-danger font-bold text-sm">Error: Required columns ("Name", "Email / Username", "Password") not found in spreadsheet.</div>`;
             return;
           }
           
           // Map fuzzy keys to standard keys expected by backend Admin.gs
           excelParsedRows = rows.map(function(r) {
+            var userVal = r[regKey] ? String(r[regKey]).trim() : "";
             return {
-              "Registration Number": r[regKey] ? String(r[regKey]).trim() : "",
+              "Registration Number": userVal,
               "Name": r[nameKey] ? String(r[nameKey]).trim() : "",
-              "Department": deptKey && r[deptKey] ? String(r[deptKey]).trim() : "General",
-              "Email": emailKey && r[emailKey] ? String(r[emailKey]).trim() : "",
-              "Passwords": pwdKey && r[pwdKey] ? String(r[pwdKey]).trim() : (r[regKey] ? String(r[regKey]).trim() : "")
+              "Department": "",
+              "Email": userVal,
+              "Passwords": pwdKey && r[pwdKey] ? String(r[pwdKey]).trim() : userVal
             };
           }).filter(function(r) {
             return r["Registration Number"] && r["Name"];
@@ -1655,20 +1619,21 @@
       var query = document.getElementById("search-students").value.trim().toLowerCase();
       
       var filtered = globalStudents.filter(function(st) {
+        var email = (st.email || st.registrationNumber || "").toLowerCase();
+        var name = (st.name || "").toLowerCase();
         return (
-          st.name.toLowerCase().indexOf(query) !== -1 ||
-          st.registrationNumber.toLowerCase().indexOf(query) !== -1 ||
-          st.department.toLowerCase().indexOf(query) !== -1
+          name.indexOf(query) !== -1 ||
+          email.indexOf(query) !== -1
         );
       });
       
       if (globalStudents.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted py-4"><i class="bi bi-people d-block mb-1 fs-3"></i> No participants found.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="3" class="text-center text-muted py-4"><i class="bi bi-people d-block mb-1 fs-3"></i> No participants found.</td></tr>`;
         return;
       }
       
       if (filtered.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted py-4"><i class="bi bi-search d-block mb-1 fs-3"></i> No matching search results found.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="3" class="text-center text-muted py-4"><i class="bi bi-search d-block mb-1 fs-3"></i> No matching search results found.</td></tr>`;
         return;
       }
       
@@ -1676,10 +1641,8 @@
       filtered.forEach(function(st) {
         html += `
           <tr>
-            <td class="fw-bold">${st.registrationNumber}</td>
+            <td class="fw-bold">${st.email || st.registrationNumber}</td>
             <td class="fw-semibold">${st.name}</td>
-            <td class="text-muted">${st.department}</td>
-            <td class="text-muted">${st.email || '-'}</td>
             <td class="text-end">
               <button onclick="openQRModal('${st.studentId}')" class="btn btn-outline-primary btn-sm py-1.5 px-3 me-2">
                 <i class="bi bi-qr-code"></i> View QR
@@ -1719,7 +1682,7 @@
       if (!activeStudent) return;
       
       document.getElementById("qr-modal-name").innerText = activeStudent.name;
-      document.getElementById("qr-modal-reg").innerText = "Reg No: " + activeStudent.registrationNumber;
+      document.getElementById("qr-modal-reg").innerText = "Email: " + (activeStudent.email || activeStudent.registrationNumber);
       
       var holder = document.getElementById("qr-canvas-holder");
       holder.innerHTML = "";
@@ -1778,8 +1741,7 @@
         <body>
           <div class="print-card">
             <h2>${activeStudent.name}</h2>
-            <p>Registration Number: <b>${activeStudent.registrationNumber}</b></p>
-            <p>Department: ${activeStudent.department}</p>
+            <p>Email: <b>${activeStudent.email || activeStudent.registrationNumber}</b></p>
             <img src="${src}" />
             <p>Attenza Attendance security token</p>
           </div>
@@ -1956,7 +1918,7 @@
             class="list-group-item list-group-item-action text-start p-3 ${activeClass}"
           >
             <div class="fw-bold truncate small mb-0.5">${rec.name}</div>
-            <div class="text-muted extra-small mb-1.5" style="font-size: 0.75rem;">Reg: ${rec.registrationNumber} • ${rec.department}</div>
+            <div class="text-muted extra-small mb-1.5" style="font-size: 0.75rem;">Email: ${rec.email || rec.registrationNumber}</div>
             <div class="d-flex align-items-center gap-1.5">
               <span class="badge bg-secondary font-semibold p-1 small" style="font-size: 0.65rem;">${rec.eventName} - ${rec.session}</span>
               <span class="badge bg-info font-semibold p-1 small" style="font-size: 0.65rem;">By: ${rec.volunteerName || 'Unknown'}</span>
@@ -2181,9 +2143,8 @@
       
       // Update header row first
       var headerHtml = `
-        <th>Reg Number</th>
+        <th>Email</th>
         <th>Student Name</th>
-        <th>Department</th>
       `;
       for (var s = 1; s <= sessionsCount; s++) {
         headerHtml += `<th class="text-center">Session ${s}</th>`;
@@ -2198,7 +2159,7 @@
       });
 
       if (globalStudents.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="${3 + sessionsCount}" class="text-center text-muted py-4">No student records in database.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="${2 + sessionsCount}" class="text-center text-muted py-4">No student records in database.</td></tr>`;
         return;
       }
 
@@ -2207,9 +2168,8 @@
         var studentAtt = attMap[st.studentId] || {};
         
         html += `<tr>`;
-        html += `<td class="fw-bold">${st.registrationNumber}</td>`;
+        html += `<td class="fw-bold">${st.email || st.registrationNumber}</td>`;
         html += `<td class="fw-semibold">${st.name}</td>`;
-        html += `<td class="text-muted">${st.department}</td>`;
         
         for (var s = 1; s <= sessionsCount; s++) {
           var sessionName = "Session " + s;
@@ -2417,7 +2377,7 @@
         var item = document.createElement('button');
         item.type = 'button';
         item.className = 'list-group-item list-group-item-action py-2 d-flex justify-content-between align-items-center';
-        item.innerHTML = '<div><strong>' + s.name + '</strong><br><small class="text-muted">' + s.registrationNumber + ' &middot; ' + (s.department || '') + '</small></div><i class="bi bi-arrow-right text-primary"></i>';
+        item.innerHTML = '<div><strong>' + s.name + '</strong><br><small class="text-muted">' + (s.email || s.registrationNumber) + '</small></div><i class="bi bi-arrow-right text-primary"></i>';
         item.onclick = function() { selectEmaStudent(s); };
         resultsDiv.appendChild(item);
       });
@@ -2437,13 +2397,15 @@
     function selectEmaStudent(student) {
       emaSelectedStudent = student;
       document.getElementById('ema-search-results').style.display = 'none';
-      document.getElementById('ema-student-search').value = student.name + ' (' + student.registrationNumber + ')';
+      document.getElementById('ema-student-search').value = student.name + ' (' + (student.email || student.registrationNumber) + ')';
 
       // Populate student card
       document.getElementById('ema-student-name').innerText = student.name;
-      document.getElementById('ema-student-reg').innerText = 'Reg: ' + student.registrationNumber;
-      document.getElementById('ema-student-dept').innerText = student.department || '--';
-      document.getElementById('ema-student-email').innerText = student.email || '--';
+      document.getElementById('ema-student-reg').innerText = 'Email: ' + (student.email || student.registrationNumber);
+      if (document.getElementById('ema-student-dept')) {
+        document.getElementById('ema-student-dept').innerText = student.department || '--';
+      }
+      document.getElementById('ema-student-email').innerText = student.email || student.registrationNumber || '--';
 
       var eventSel = document.getElementById('ema-event-select');
       var sessionSel = document.getElementById('ema-session-select');

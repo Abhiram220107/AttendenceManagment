@@ -60,18 +60,16 @@ function importParticipantsFromExcelArray(rows, erasePrevious) {
     
     for (var i = 0; i < rows.length; i++) {
       var row = rows[i];
-      var regNum = row["Registration Number"] || row["regNumber"] || row["regNum"] || row["username"] || row["Username"] || row["user"] || row["User Name"];
+      var regNum = row["Email"] || row["email"] || row["Registration Number"] || row["regNumber"] || row["regNum"] || row["username"] || row["Username"] || row["user"] || row["User Name"];
       var name = row["Name"] || row["name"] || row["Full Name"] || row["fullname"];
-      var dept = row["Department"] || row["department"] || row["dept"] || "General";
-      var email = row["Email"] || row["email"] || "";
+      var email = row["Email"] || row["email"] || regNum || "";
       var pwd = row["Passwords"] || row["Password"] || row["password"] || row["pwd"] || "";
       
       if (!regNum || !name) continue;
       
       regNum = regNum.toString().trim();
       name = name.toString().trim();
-      dept = dept ? dept.toString().trim() : "General";
-      email = email ? email.toString().trim() : "";
+      email = email ? email.toString().trim() : regNum;
       pwd = pwd ? pwd.toString().trim() : regNum;
       
       var regNumNormalized = regNum.toLowerCase().replace(/\s+/g, "");
@@ -84,7 +82,7 @@ function importParticipantsFromExcelArray(rows, erasePrevious) {
           studentId,
           regNum,
           name,
-          dept,
+          "", // Department removed
           email,
           studentHash,
           qrToken,
@@ -192,8 +190,8 @@ function createStudentAccount(name, username, password) {
       studentId,
       cleanUsername,
       cleanName,
-      "General",
-      "",
+      "", // Department removed
+      cleanUsername, // Email is username
       cleanPassword,
       qrToken,
       "student",
