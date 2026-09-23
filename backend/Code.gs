@@ -86,16 +86,15 @@ function doPost(e) {
         response = clearAllStudentsData();
         break;
 
+      case 'createStudent':
+      case 'createStudentAccount':
+        response = createStudentAccount(payload.name, payload.username, payload.password);
+        break;
+
       case 'createVolunteer':
       case 'createVolunteerAccount':
       case 'createNewVolunteer':
         response = createVolunteerAccount(payload.name || payload.username, payload.username || payload.email, payload.password);
-        break;
-
-      case 'registerAccount':
-      case 'createAccount':
-      case 'registerStudent':
-        response = registerAccount(payload.name, payload.username, payload.password);
         break;
 
       case 'createEvent':

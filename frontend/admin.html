@@ -453,6 +453,9 @@
               <p class="text-muted small">View unique QR credentials</p>
             </div>
             <div class="d-flex gap-2 align-items-center">
+              <button onclick="openCreateStudentModal()" class="btn btn-primary btn-sm text-nowrap">
+                <i class="bi bi-person-plus me-1"></i> Add Student
+              </button>
               <button onclick="erasePreviousDataDirectly()" class="btn btn-outline-danger btn-sm text-nowrap">
                 <i class="bi bi-trash3 me-1"></i> Erase All Students
               </button>
@@ -984,6 +987,38 @@
     </div>
   </div>
 
+  <!-- Modal: Create Student -->
+  <div id="create-student-modal" class="modal fade" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content p-2">
+        <div class="modal-header">
+          <h5 class="modal-title font-bold">Add Student Participant</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <form id="create-student-form" onsubmit="submitNewStudent(event)">
+          <div class="modal-body space-y-3">
+            <div class="mb-3">
+              <label for="st-name-input" class="form-label font-bold text-sm">Full Name</label>
+              <input type="text" id="st-name-input" class="form-control" placeholder="e.g. John Doe" required>
+            </div>
+            <div class="mb-3">
+              <label for="st-username-input" class="form-label font-bold text-sm">Username / Registration Number</label>
+              <input type="text" id="st-username-input" class="form-control" placeholder="e.g. MCSE-01 or 2026CS101" required>
+            </div>
+            <div class="mb-3">
+              <label for="st-pass-input" class="form-label font-bold text-sm">Login Password</label>
+              <input type="password" id="st-pass-input" class="form-control" placeholder="••••••••" required>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" id="st-submit-btn" class="btn btn-primary">Create Student Account</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
   <!-- Modal: Create Volunteer -->
   <div id="create-volunteer-modal" class="modal fade" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
@@ -1068,6 +1103,7 @@
     // Bootstrap Modal instances
     var qrModalInstance = null;
     var eventModalInstance = null;
+    var studentModalInstance = null;
     var volunteerModalInstance = null;
     var sessionsModalInstance = null;
     
@@ -1089,6 +1125,7 @@
       // Initialize modals
       qrModalInstance = new bootstrap.Modal(document.getElementById('student-qr-modal'));
       eventModalInstance = new bootstrap.Modal(document.getElementById('create-event-modal'));
+      studentModalInstance = new bootstrap.Modal(document.getElementById('create-student-modal'));
       volunteerModalInstance = new bootstrap.Modal(document.getElementById('create-volunteer-modal'));
       sessionsModalInstance = new bootstrap.Modal(document.getElementById('manage-sessions-modal'));
       
@@ -1798,6 +1835,43 @@
         `;
       });
       tbody.innerHTML = html;
+    }
+
+    function openCreateStudentModal() {
+      document.getElementById("create-student-form").reset();
+      studentModalInstance.show();
+    }
+
+    function submitNewStudent(e) {
+      e.preventDefault();
+      var name = document.getElementById("st-name-input").value.trim();
+      var username = document.getElementById("st-username-input").value.trim();
+      var password = document.getElementById("st-pass-input").value.trim();
+      var submitBtn = document.getElementById("st-submit-btn");
+
+      submitBtn.disabled = true;
+      submitBtn.innerText = "Creating...";
+
+      execApi(
+        'createStudent',
+        { name: name, username: username, password: password },
+        function(response) {
+          submitBtn.disabled = false;
+          submitBtn.innerText = "Create Student Account";
+          if (response.success) {
+            studentModalInstance.hide();
+            showStatusToast(response.message, "success");
+            fetchStudentsList();
+          } else {
+            showStatusToast(response.message, "danger");
+          }
+        },
+        function(err) {
+          submitBtn.disabled = false;
+          submitBtn.innerText = "Create Student Account";
+          showStatusToast("Failed: " + err.message, "danger");
+        }
+      );
     }
 
     function openCreateVolunteerModal() {

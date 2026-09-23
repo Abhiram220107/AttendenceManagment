@@ -138,6 +138,74 @@ function createVolunteerAccount(name, username, password) {
   }
 }
 
+function createStudentAccount(name, username, password) {
+  try {
+    if (!name || !username || !password) {
+      return { success: false, message: "Name, Username, and Password are required." };
+    }
+
+    var cleanName = name.toString().trim();
+    var cleanUsername = username.toString().trim();
+    var cleanPassword = password.toString().trim();
+
+    if (!cleanName || !cleanUsername || !cleanPassword) {
+      return { success: false, message: "All fields must be filled." };
+    }
+
+    var normalizedUsername = cleanUsername.toLowerCase().replace(/\s+/g, "");
+
+    var ss = getSpreadsheet();
+    var studentSheet = ss.getSheetByName("Students");
+    if (!studentSheet) return { success: false, message: "Students sheet not found." };
+
+    // Check duplicate in Admins
+    var admins = getSheetDataAsJson("Admins");
+    for (var a = 0; a < admins.length; a++) {
+      var aUser = admins[a].username ? admins[a].username.toString().trim().toLowerCase() : "";
+      if (aUser === normalizedUsername) {
+        return { success: false, message: "This username already exists." };
+      }
+    }
+
+    // Check duplicate in Volunteers
+    var volunteers = getSheetDataAsJson("Volunteers");
+    for (var v = 0; v < volunteers.length; v++) {
+      var vUser = volunteers[v].username ? volunteers[v].username.toString().trim().toLowerCase() : "";
+      if (vUser === normalizedUsername) {
+        return { success: false, message: "This username already exists." };
+      }
+    }
+
+    // Check duplicate in Students
+    var students = getSheetDataAsJson("Students");
+    for (var s = 0; s < students.length; s++) {
+      var sReg = students[s].registrationNumber ? students[s].registrationNumber.toString().trim().toLowerCase().replace(/\s+/g, "") : "";
+      if (sReg === normalizedUsername) {
+        return { success: false, message: "A student with this username already exists." };
+      }
+    }
+
+    var studentId = "student_" + Utilities.getUuid();
+    var qrToken = "qr_" + Utilities.getUuid().replace(/-/g, "");
+
+    studentSheet.appendRow([
+      studentId,
+      cleanUsername,
+      cleanName,
+      "General",
+      "",
+      cleanPassword,
+      qrToken,
+      "student",
+      ""
+    ]);
+
+    return { success: true, message: "Student account created successfully." };
+  } catch (e) {
+    return { success: false, message: "Error creating student: " + e.message };
+  }
+}
+
 function createEvent(eventName, eventDateStr, sessionsCount, photoRequirement) {
   try {
     var ss = getSpreadsheet();

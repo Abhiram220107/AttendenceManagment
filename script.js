@@ -49,8 +49,7 @@ function callBackendApi(action, payload) {
         case 'getStudentsList': runner.getAdminStudentsList(); break;
         case 'getVolunteersList': runner.getAdminVolunteersList(); break;
         case 'createVolunteer': runner.createVolunteerAccount(payload.name, payload.username, payload.password); break;
-        case 'registerAccount':
-        case 'createAccount': runner.registerAccount(payload.name, payload.username, payload.password); break;
+        case 'createStudent': runner.createStudentAccount(payload.name, payload.username, payload.password); break;
         case 'deleteVolunteer': runner.deleteVolunteer(payload.volunteerId || payload.vId); break;
         case 'getPendingVerifications': runner.getPendingVerifications(); break;
         case 'processVerification':

@@ -38,34 +38,6 @@
       border-radius: 16px;
       box-shadow: 0 20px 40px rgba(0, 0, 0, 0.35);
     }
-
-    .auth-nav-tabs {
-      background: #f1f5f9;
-      padding: 4px;
-      border-radius: 12px;
-      display: flex;
-      gap: 4px;
-      margin-bottom: 24px;
-    }
-    
-    .auth-tab-btn {
-      flex: 1;
-      border: none;
-      background: transparent;
-      padding: 8px 16px;
-      border-radius: 8px;
-      font-weight: 700;
-      font-size: 0.85rem;
-      color: #64748b;
-      transition: all 0.2s ease;
-      cursor: pointer;
-    }
-    
-    .auth-tab-btn.active {
-      background: #ffffff;
-      color: #0f172a;
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
-    }
   </style>
 </head>
 <body>
@@ -84,27 +56,11 @@
         <p class="text-muted small fw-medium mb-0">Smart Event Attendance &amp; Verification Platform</p>
       </div>
 
-      <!-- Segmented Navigation Tabs: Sign In / Create Account -->
-      <div class="auth-nav-tabs" role="tablist">
-        <button type="button" id="tab-signin-btn" class="auth-tab-btn active" onclick="switchAuthTab('signin')">
-          <i class="bi bi-box-arrow-in-right me-1"></i> Sign In
-        </button>
-        <button type="button" id="tab-signup-btn" class="auth-tab-btn" onclick="switchAuthTab('signup')">
-          <i class="bi bi-person-plus me-1"></i> Create Account
-        </button>
-      </div>
-
-      <!-- SIGN IN SECTION -->
-      <div id="signin-section">
+      <div id="login-box">
         <!-- Action feedback alerts -->
         <div id="login-error-alert" class="alert alert-danger d-none d-flex align-items-center gap-2" role="alert">
           <i class="bi bi-exclamation-triangle-fill"></i>
           <div id="error-message">Invalid credentials</div>
-        </div>
-
-        <div id="login-success-alert" class="alert alert-success d-none d-flex align-items-center gap-2" role="alert">
-          <i class="bi bi-check-circle-fill"></i>
-          <div id="login-success-message">Account created! Please sign in.</div>
         </div>
 
         <form id="login-form">
@@ -157,96 +113,12 @@
           </button>
 
           <!-- Help Info -->
-          <div class="alert alert-light text-center small text-muted border mb-3 p-2.5 rounded-3">
-            <i class="bi bi-shield-check me-1 text-primary"></i> <b>Students:</b> Sign in with Registration Number &amp; Password.
-          </div>
-
-          <div class="text-center small text-muted">
-            Don't have an account? <a href="javascript:void(0)" onclick="switchAuthTab('signup')" class="text-primary fw-bold text-decoration-none">Create an Account</a>
+          <div class="alert alert-light text-center small text-muted border mb-0 p-2.5 rounded-3">
+            <i class="bi bi-shield-lock me-1 text-primary"></i> <b>Access Notice:</b> Login accounts are issued and managed exclusively by Event Administrators.
           </div>
 
         </form>
       </div>
-
-      <!-- CREATE ACCOUNT SECTION -->
-      <div id="signup-section" class="d-none">
-        <!-- Action feedback alerts -->
-        <div id="signup-error-alert" class="alert alert-danger d-none d-flex align-items-center gap-2" role="alert">
-          <i class="bi bi-exclamation-triangle-fill"></i>
-          <div id="signup-error-message">Error creating account</div>
-        </div>
-
-        <form id="signup-form">
-          <!-- Name input -->
-          <div class="mb-3">
-            <label for="reg-name" class="form-label font-bold text-sm text-dark">Full Name</label>
-            <div class="input-group">
-              <span class="input-group-text bg-light text-muted border-end-0"><i class="bi bi-person"></i></span>
-              <input 
-                type="text" 
-                id="reg-name" 
-                class="form-control border-start-0 py-2.5" 
-                placeholder="e.g. John Doe" 
-                required
-              >
-            </div>
-          </div>
-
-          <!-- Username input -->
-          <div class="mb-3">
-            <label for="reg-username" class="form-label font-bold text-sm text-dark">Username</label>
-            <div class="input-group">
-              <span class="input-group-text bg-light text-muted border-end-0"><i class="bi bi-at"></i></span>
-              <input 
-                type="text" 
-                id="reg-username" 
-                class="form-control border-start-0 py-2.5" 
-                placeholder="e.g. johndoe or 2026CS101" 
-                required
-              >
-            </div>
-          </div>
-
-          <!-- Password input -->
-          <div class="mb-4">
-            <label for="reg-password" class="form-label font-bold text-sm text-dark">Password</label>
-            <div class="input-group">
-              <span class="input-group-text bg-light text-muted border-end-0"><i class="bi bi-key"></i></span>
-              <input 
-                type="password" 
-                id="reg-password" 
-                class="form-control border-start-0 border-end-0 py-2.5" 
-                placeholder="••••••••" 
-                required
-              >
-              <button 
-                type="button" 
-                id="toggle-reg-password" 
-                class="btn btn-outline-secondary border-start-0 bg-light text-muted py-2.5" 
-                style="border-color: #dee2e6; z-index: 4;"
-                onclick="toggleRegPasswordVisibility()"
-              >
-                <i id="toggle-reg-password-icon" class="bi bi-eye"></i>
-              </button>
-            </div>
-          </div>
-
-          <button 
-            type="submit" 
-            id="reg-submit-btn" 
-            class="btn btn-primary w-100 py-2.5 font-bold mb-3 shadow-sm"
-          >
-            <span id="reg-btn-text">Create Account</span>
-            <span id="reg-btn-spinner" class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
-          </button>
-
-          <div class="text-center small text-muted">
-            Already have an account? <a href="javascript:void(0)" onclick="switchAuthTab('signin')" class="text-primary fw-bold text-decoration-none">Sign In</a>
-          </div>
-
-        </form>
-      </div>
-
     </div>
     
     <!-- Footer -->
@@ -267,33 +139,7 @@
       enforceRoleSecurity([], 'index');
     });
 
-    function switchAuthTab(tab) {
-      var signinSec = document.getElementById("signin-section");
-      var signupSec = document.getElementById("signup-section");
-      var signinTabBtn = document.getElementById("tab-signin-btn");
-      var signupTabBtn = document.getElementById("tab-signup-btn");
-      var loginErr = document.getElementById("login-error-alert");
-      var signupErr = document.getElementById("signup-error-alert");
-      var loginSuccess = document.getElementById("login-success-alert");
-
-      if (loginErr) loginErr.classList.add("d-none");
-      if (signupErr) signupErr.classList.add("d-none");
-      if (loginSuccess) loginSuccess.classList.add("d-none");
-
-      if (tab === 'signup') {
-        signinSec.classList.add("d-none");
-        signupSec.classList.remove("d-none");
-        signinTabBtn.classList.remove("active");
-        signupTabBtn.classList.add("active");
-      } else {
-        signupSec.classList.add("d-none");
-        signinSec.classList.remove("d-none");
-        signupTabBtn.classList.remove("active");
-        signinTabBtn.classList.add("active");
-      }
-    }
-
-    // Form submit controller: Sign In
+    // Form submit controller
     document.getElementById("login-form").addEventListener("submit", function(e) {
       e.preventDefault();
       
@@ -301,14 +147,12 @@
       var passVal = document.getElementById("password").value.trim();
       var errorAlert = document.getElementById("login-error-alert");
       var errorMsg = document.getElementById("error-message");
-      var successAlert = document.getElementById("login-success-alert");
       
       var submitBtn = document.getElementById("submit-btn");
       var btnText = document.getElementById("btn-text");
       var spinner = document.getElementById("btn-spinner");
 
       errorAlert.classList.add("d-none");
-      if (successAlert) successAlert.classList.add("d-none");
       submitBtn.disabled = true;
       btnText.innerText = "Signing in...";
       spinner.classList.remove("d-none");
@@ -341,73 +185,9 @@
       );
     });
 
-    // Form submit controller: Create Account
-    document.getElementById("signup-form").addEventListener("submit", function(e) {
-      e.preventDefault();
-      
-      var nameVal = document.getElementById("reg-name").value.trim();
-      var userVal = document.getElementById("reg-username").value.trim();
-      var passVal = document.getElementById("reg-password").value.trim();
-      
-      var errorAlert = document.getElementById("signup-error-alert");
-      var errorMsg = document.getElementById("signup-error-message");
-      var successAlert = document.getElementById("login-success-alert");
-      var successMsg = document.getElementById("login-success-message");
-      
-      var submitBtn = document.getElementById("reg-submit-btn");
-      var btnText = document.getElementById("reg-btn-text");
-      var spinner = document.getElementById("reg-btn-spinner");
-
-      errorAlert.classList.add("d-none");
-      submitBtn.disabled = true;
-      btnText.innerText = "Creating Account...";
-      spinner.classList.remove("d-none");
-
-      execApi(
-        'registerAccount',
-        { name: nameVal, username: userVal, password: passVal },
-        function(response) {
-          submitBtn.disabled = false;
-          btnText.innerText = "Create Account";
-          spinner.classList.add("d-none");
-          
-          if (response.success) {
-            document.getElementById("signup-form").reset();
-            switchAuthTab('signin');
-            document.getElementById("username").value = userVal;
-            document.getElementById("password").value = "";
-            successMsg.innerText = response.message || "Account created successfully! You can now sign in.";
-            successAlert.classList.remove("d-none");
-          } else {
-            errorMsg.innerText = response.message || "Failed to create account.";
-            errorAlert.classList.remove("d-none");
-          }
-        },
-        function(err) {
-          submitBtn.disabled = false;
-          btnText.innerText = "Create Account";
-          spinner.classList.add("d-none");
-          errorMsg.innerText = "Server connection lost: " + err.message;
-          errorAlert.classList.remove("d-none");
-        }
-      );
-    });
-
     function togglePasswordVisibility() {
       var passInput = document.getElementById("password");
       var passIcon = document.getElementById("toggle-password-icon");
-      if (passInput.type === "password") {
-        passInput.type = "text";
-        passIcon.className = "bi bi-eye-slash";
-      } else {
-        passInput.type = "password";
-        passIcon.className = "bi bi-eye";
-      }
-    }
-
-    function toggleRegPasswordVisibility() {
-      var passInput = document.getElementById("reg-password");
-      var passIcon = document.getElementById("toggle-reg-password-icon");
       if (passInput.type === "password") {
         passInput.type = "text";
         passIcon.className = "bi bi-eye-slash";
