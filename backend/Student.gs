@@ -118,3 +118,95 @@ function getStudentProfileData(userId) {
     return { success: false, message: "Error loading profile: " + e.message };
   }
 }
+
+/**
+ * Self-registration endpoint for account creation
+ * Requires strictly Name, Username, and Password only
+ */
+function registerAccount(name, username, password) {
+  try {
+    if (!name || !username || !password) {
+      return { success: false, message: "Name, Username, and Password are required." };
+    }
+
+    var cleanName = name.toString().trim();
+    var cleanUsername = username.toString().trim();
+    var cleanPassword = password.toString().trim();
+
+    if (!cleanName || !cleanUsername || !cleanPassword) {
+      return { success: false, message: "All fields must be filled." };
+    }
+
+    var normalizedUsername = cleanUsername.toLowerCase();
+    var normalizedNoSpaces = normalizedUsername.replace(/\s+/g, "");
+
+    var ss = getSpreadsheet();
+    var studentSheet = ss.getSheetByName("Students");
+    if (!studentSheet) return { success: false, message: "Database error: Students sheet not found." };
+
+    // Check duplicate in Admins
+    var admins = getSheetDataAsJson("Admins");
+    for (var a = 0; a < admins.length; a++) {
+      var aUser = admins[a].username ? admins[a].username.toString().trim().toLowerCase() : "";
+      if (aUser === normalizedUsername) {
+        return { success: false, message: "This username is already taken. Please choose another." };
+      }
+    }
+
+    // Check duplicate in Volunteers
+    var volunteers = getSheetDataAsJson("Volunteers");
+    for (var v = 0; v < volunteers.length; v++) {
+      var vUser = volunteers[v].username ? volunteers[v].username.toString().trim().toLowerCase() : "";
+      if (vUser === normalizedUsername) {
+        return { success: false, message: "This username is already taken. Please choose another." };
+      }
+    }
+
+    // Check duplicate in Students (registrationNumber / username)
+    var students = getSheetDataAsJson("Students");
+    for (var s = 0; s < students.length; s++) {
+      var sReg = students[s].registrationNumber ? students[s].registrationNumber.toString().trim().toLowerCase().replace(/\s+/g, "") : "";
+      if (sReg === normalizedNoSpaces) {
+        return { success: false, message: "An account with this username already exists." };
+      }
+    }
+
+    var studentId = "student_" + Utilities.getUuid();
+    var qrToken = "qr_" + Utilities.getUuid().replace(/-/g, "");
+    var qrCodeURL = "";
+
+    // Generate QR code image if Google Drive folder is configured
+    try {
+      if (typeof QR_CODES_FOLDER_ID !== 'undefined' && QR_CODES_FOLDER_ID) {
+        var qrApiUrl = "https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=" + encodeURIComponent(qrToken);
+        var response = UrlFetchApp.fetch(qrApiUrl);
+        var blob = response.getBlob().setName(cleanUsername + "_qr.png");
+        var qrFolder = DriveApp.getFolderById(QR_CODES_FOLDER_ID);
+        var file = qrFolder.createFile(blob);
+        file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+        qrCodeURL = "https://lh3.googleusercontent.com/d/" + file.getId();
+      }
+    } catch (qrErr) {
+      Logger.log("QR Image generation note: " + qrErr.toString());
+    }
+
+    studentSheet.appendRow([
+      studentId,
+      cleanUsername,
+      cleanName,
+      "General",
+      "",
+      cleanPassword,
+      qrToken,
+      "student",
+      qrCodeURL
+    ]);
+
+    return { 
+      success: true, 
+      message: "Account created successfully! You can now sign in with your username and password." 
+    };
+  } catch (e) {
+    return { success: false, message: "Error creating account: " + e.message };
+  }
+}
