@@ -389,26 +389,33 @@
                   <div class="d-flex gap-2.5 mb-3">
                     <span class="badge bg-primary rounded-circle d-flex align-items-center justify-content-center" style="width: 20px; height: 20px; font-size: 0.65rem;">1</span>
                     <div>
-                      <p class="small font-bold mb-0">Registration Number</p>
-                      <p class="text-muted small" style="font-size: 0.75rem;">Used as registration code & student username</p>
+                      <p class="small font-bold mb-0">Name</p>
+                      <p class="text-muted small" style="font-size: 0.75rem;">Student full name (Required)</p>
                     </div>
                   </div>
                   <div class="d-flex gap-2.5 mb-3">
                     <span class="badge bg-primary rounded-circle d-flex align-items-center justify-content-center" style="width: 20px; height: 20px; font-size: 0.65rem;">2</span>
                     <div>
-                      <p class="small font-bold mb-0">Name</p>
-                      <p class="text-muted small" style="font-size: 0.75rem;">Student full name</p>
+                      <p class="small font-bold mb-0">Username</p>
+                      <p class="text-muted small" style="font-size: 0.75rem;">Registration code or username (Required)</p>
                     </div>
                   </div>
                   <div class="d-flex gap-2.5 mb-3">
                     <span class="badge bg-primary rounded-circle d-flex align-items-center justify-content-center" style="width: 20px; height: 20px; font-size: 0.65rem;">3</span>
                     <div>
-                      <p class="small font-bold mb-0">Department</p>
-                      <p class="text-muted small" style="font-size: 0.75rem;">Major department abbreviation</p>
+                      <p class="small font-bold mb-0">Password</p>
+                      <p class="text-muted small" style="font-size: 0.75rem;">Login password (Required)</p>
                     </div>
                   </div>
                   <div class="d-flex gap-2.5 mb-3">
                     <span class="badge bg-secondary rounded-circle d-flex align-items-center justify-content-center" style="width: 20px; height: 20px; font-size: 0.65rem;">4</span>
+                    <div>
+                      <p class="small font-bold mb-0">Department (Optional)</p>
+                      <p class="text-muted small" style="font-size: 0.75rem;">Defaults to "General"</p>
+                    </div>
+                  </div>
+                  <div class="d-flex gap-2.5 mb-3">
+                    <span class="badge bg-secondary rounded-circle d-flex align-items-center justify-content-center" style="width: 20px; height: 20px; font-size: 0.65rem;">5</span>
                     <div>
                       <p class="small font-bold mb-0">Email (Optional)</p>
                       <p class="text-muted small" style="font-size: 0.75rem;">Contact email</p>
@@ -1437,35 +1444,45 @@
           
           var regKey = foundKeys.find(function(k) {
             var n = k.toLowerCase().replace(/[^a-z0-9]/g, "");
-            return n.indexOf("registration") !== -1 || n.indexOf("regnum") !== -1 || n.indexOf("regno") !== -1 || n.indexOf("regnumber") !== -1;
+            return n.indexOf("username") !== -1 || n.indexOf("user") !== -1 || n.indexOf("registration") !== -1 || n.indexOf("regnum") !== -1 || n.indexOf("regno") !== -1 || n.indexOf("regnumber") !== -1 || n.indexOf("roll") !== -1 || n.indexOf("id") !== -1;
           });
           
           var nameKey = foundKeys.find(function(k) {
             var n = k.toLowerCase().replace(/[^a-z0-9]/g, "");
-            return n === "name" || n.indexOf("studentname") !== -1 || n.indexOf("fullname") !== -1;
+            return n === "name" || n.indexOf("studentname") !== -1 || n.indexOf("fullname") !== -1 || n.indexOf("name") !== -1;
           });
           
+          var pwdKey = foundKeys.find(function(k) {
+            var n = k.toLowerCase().replace(/[^a-z0-9]/g, "");
+            return n.indexOf("password") !== -1 || n.indexOf("pass") !== -1 || n.indexOf("pwd") !== -1;
+          });
+
           var deptKey = foundKeys.find(function(k) {
             var n = k.toLowerCase().replace(/[^a-z0-9]/g, "");
             return n.indexOf("department") !== -1 || n === "dept" || n === "branch";
           });
+
+          var emailKey = foundKeys.find(function(k) {
+            var n = k.toLowerCase().replace(/[^a-z0-9]/g, "");
+            return n.indexOf("email") !== -1 || n.indexOf("mail") !== -1;
+          });
           
-          if (!regKey || !nameKey || !deptKey) {
-            feedback.innerHTML = `<div class="alert alert-danger font-bold text-sm">Error: Required columns ("Registration Number", "Name", "Department") not found.</div>`;
+          if (!regKey || !nameKey || !pwdKey) {
+            feedback.innerHTML = `<div class="alert alert-danger font-bold text-sm">Error: Required columns ("Name", "Username", "Password") not found in spreadsheet.</div>`;
             return;
           }
           
           // Map fuzzy keys to standard keys expected by backend Admin.gs
           excelParsedRows = rows.map(function(r) {
-            var emailKey = foundKeys.find(function(k) { return k.toLowerCase().indexOf("email") !== -1; });
-            var pwdKey = foundKeys.find(function(k) { var n = k.toLowerCase(); return n === "passwords" || n === "password" || n === "pwd"; });
             return {
-              "Registration Number": r[regKey],
-              "Name": r[nameKey],
-              "Department": r[deptKey],
-              "Email": emailKey ? r[emailKey] : "",
-              "Passwords": pwdKey ? r[pwdKey] : ""
+              "Registration Number": r[regKey] ? String(r[regKey]).trim() : "",
+              "Name": r[nameKey] ? String(r[nameKey]).trim() : "",
+              "Department": deptKey && r[deptKey] ? String(r[deptKey]).trim() : "General",
+              "Email": emailKey && r[emailKey] ? String(r[emailKey]).trim() : "",
+              "Passwords": pwdKey && r[pwdKey] ? String(r[pwdKey]).trim() : (r[regKey] ? String(r[regKey]).trim() : "")
             };
+          }).filter(function(r) {
+            return r["Registration Number"] && r["Name"];
           });
           importBtn.disabled = false;
           feedback.innerHTML = `

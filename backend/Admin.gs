@@ -17,18 +17,18 @@ function importParticipantsFromExcelArray(rows) {
     
     for (var i = 0; i < rows.length; i++) {
       var row = rows[i];
-      var regNum = row["Registration Number"] || row["regNumber"] || row["regNum"];
-      var name = row["Name"] || row["name"];
-      var dept = row["Department"] || row["department"] || row["dept"];
+      var regNum = row["Registration Number"] || row["regNumber"] || row["regNum"] || row["username"] || row["Username"] || row["user"] || row["User Name"];
+      var name = row["Name"] || row["name"] || row["Full Name"] || row["fullname"];
+      var dept = row["Department"] || row["department"] || row["dept"] || "General";
       var email = row["Email"] || row["email"] || "";
-      var pwd = row["Passwords"] || row["Password"] || row["password"] || "";
+      var pwd = row["Passwords"] || row["Password"] || row["password"] || row["pwd"] || "";
       
-      if (!regNum || !name || !dept) continue;
+      if (!regNum || !name) continue;
       
       regNum = regNum.toString().trim();
       name = name.toString().trim();
-      dept = dept.toString().trim();
-      email = email.toString().trim();
+      dept = dept ? dept.toString().trim() : "General";
+      email = email ? email.toString().trim() : "";
       pwd = pwd ? pwd.toString().trim() : regNum;
       
       var regNumNormalized = regNum.toLowerCase().replace(/\s+/g, "");
