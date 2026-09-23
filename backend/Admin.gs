@@ -49,11 +49,14 @@ function importParticipantsFromExcelArray(rows, erasePrevious) {
     }
     
     var existingStudents = getSheetDataAsJson("Students");
-    var existingRegs = existingStudents.map(function(s) { 
-      return s.registrationNumber ? s.registrationNumber.toString().trim().toLowerCase().replace(/\s+/g, "") : ""; 
-    });
+    var existingRegs = {};
+    for (var k = 0; k < existingStudents.length; k++) {
+      var r = existingStudents[k].registrationNumber ? existingStudents[k].registrationNumber.toString().trim().toLowerCase().replace(/\s+/g, "") : "";
+      if (r) existingRegs[r] = true;
+    }
     
     var importedCount = 0;
+    var newRowsToAppend = [];
     
     for (var i = 0; i < rows.length; i++) {
       var row = rows[i];
@@ -72,28 +75,12 @@ function importParticipantsFromExcelArray(rows, erasePrevious) {
       pwd = pwd ? pwd.toString().trim() : regNum;
       
       var regNumNormalized = regNum.toLowerCase().replace(/\s+/g, "");
-      if (existingRegs.indexOf(regNumNormalized) === -1) {
+      if (!existingRegs[regNumNormalized]) {
         var studentId = "student_" + Utilities.getUuid();
         var qrToken = "qr_" + Utilities.getUuid().replace(/-/g, "");
-        
-        // Generate QR code image and upload it to Google Drive QR codes folder
-        var qrCodeURL = "";
-        try {
-          var qrApiUrl = "https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=" + encodeURIComponent(qrToken);
-          var response = UrlFetchApp.fetch(qrApiUrl);
-          var blob = response.getBlob().setName(regNum + "_qr.png");
-          
-          var qrFolder = DriveApp.getFolderById(QR_CODES_FOLDER_ID);
-          var file = qrFolder.createFile(blob);
-          file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
-          qrCodeURL = "https://lh3.googleusercontent.com/d/" + file.getId();
-        } catch (qrErr) {
-          Logger.log("QR Image generation failed: " + qrErr.toString());
-        }
-        
         var studentHash = pwd;
         
-        studentSheet.appendRow([
+        newRowsToAppend.push([
           studentId,
           regNum,
           name,
@@ -102,15 +89,20 @@ function importParticipantsFromExcelArray(rows, erasePrevious) {
           studentHash,
           qrToken,
           "student",
-          qrCodeURL
+          "" // Instant vector QR generation on client-side via qrToken
         ]);
         
-        existingRegs.push(regNum.toLowerCase());
+        existingRegs[regNumNormalized] = true;
         importedCount++;
       }
     }
     
-    return { success: true, message: "Successfully imported " + importedCount + " participants." };
+    if (newRowsToAppend.length > 0) {
+      var startRow = studentSheet.getLastRow() + 1;
+      studentSheet.getRange(startRow, 1, newRowsToAppend.length, 9).setValues(newRowsToAppend);
+    }
+    
+    return { success: true, message: "Successfully imported " + importedCount + " participants in record time." };
   } catch (e) {
     return { success: false, message: "Error importing: " + e.message };
   }

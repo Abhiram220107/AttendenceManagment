@@ -173,22 +173,6 @@ function registerAccount(name, username, password) {
 
     var studentId = "student_" + Utilities.getUuid();
     var qrToken = "qr_" + Utilities.getUuid().replace(/-/g, "");
-    var qrCodeURL = "";
-
-    // Generate QR code image if Google Drive folder is configured
-    try {
-      if (typeof QR_CODES_FOLDER_ID !== 'undefined' && QR_CODES_FOLDER_ID) {
-        var qrApiUrl = "https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=" + encodeURIComponent(qrToken);
-        var response = UrlFetchApp.fetch(qrApiUrl);
-        var blob = response.getBlob().setName(cleanUsername + "_qr.png");
-        var qrFolder = DriveApp.getFolderById(QR_CODES_FOLDER_ID);
-        var file = qrFolder.createFile(blob);
-        file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
-        qrCodeURL = "https://lh3.googleusercontent.com/d/" + file.getId();
-      }
-    } catch (qrErr) {
-      Logger.log("QR Image generation note: " + qrErr.toString());
-    }
 
     studentSheet.appendRow([
       studentId,
@@ -199,7 +183,7 @@ function registerAccount(name, username, password) {
       cleanPassword,
       qrToken,
       "student",
-      qrCodeURL
+      ""
     ]);
 
     return { 
